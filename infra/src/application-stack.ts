@@ -6,6 +6,7 @@ import type { Construct } from 'constructs';
 import type { DataStack } from './data-stack.js';
 import { deploymentCustomDomain, type CustomDomain } from './custom-domain.js';
 import { spaRouterCode } from './spa-router.js';
+import type { SdiOperatorReadiness } from '../../packages/domain/src/index.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 interface ApplicationStackProps extends StackProps {
@@ -16,6 +17,8 @@ interface ApplicationStackProps extends StackProps {
   publicDemo?: boolean;
   selfHostedCompanyId?: string;
   customDomain?: CustomDomain;
+  sdiOperatorTenantId?: string;
+  sdiOperatorReadiness?: SdiOperatorReadiness;
   /** Unit tests supply tiny local assets; production always bundles the real handler. */
   apiCode?: lambda.Code;
   webDirectory?: string;
@@ -27,6 +30,8 @@ export class ApplicationStack extends Stack {
     const { data, stage } = props;
     const customDomain = deploymentCustomDomain(props.customDomain?.domainName, props.customDomain?.hostedZoneId, props.customDomain?.certificateArn);
     const multiTenant = props.multiTenant ?? true;
+    if (Boolean(props.sdiOperatorTenantId) !== Boolean(props.sdiOperatorReadiness)) throw new Error('SdI operator tenant and readiness must be configured together');
+    if (props.sdiOperatorTenantId && !/^[a-zA-Z0-9_-]{1,80}$/.test(props.sdiOperatorTenantId)) throw new Error('Invalid SdI operator tenant ID');
     if (!multiTenant && (!props.selfHostedCompanyId || !/^[a-zA-Z0-9_-]{1,80}$/.test(props.selfHostedCompanyId))) throw new Error('selfHostedCompanyId is required in single-company mode');
     const webDirectory = props.webDirectory ?? path.join(root, 'apps/web/dist');
     if (!existsSync(path.join(webDirectory, 'index.html'))) throw new Error('Build web assets first: npm run build --workspace @openfatture/web');
@@ -99,6 +104,7 @@ export class ApplicationStack extends Stack {
         COGNITO_USER_POOL_ID: data.userPool.userPoolId, COGNITO_CLIENT_ID: client.userPoolClientId,
         ARTIFACTS_BUCKET: data.artifacts.bucketName, OUTBOX_QUEUE_URL: data.outbox.queueUrl,
         CORS_ORIGINS: webOrigins.join(','), MULTI_TENANT: String(multiTenant),
+        ...(props.sdiOperatorTenantId && props.sdiOperatorReadiness ? { SDI_OPERATOR_TENANT_ID: props.sdiOperatorTenantId, SDI_OPERATOR_READINESS_JSON: JSON.stringify(props.sdiOperatorReadiness) } : {}),
         ...(!multiTenant ? { SELF_HOSTED_COMPANY_ID: props.selfHostedCompanyId! } : {}),
       },
     };

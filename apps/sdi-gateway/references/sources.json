@@ -1,0 +1,26 @@
+[
+  {
+    "file": "RicezioneFatture_v1.0.wsdl",
+    "url": "https://www.fatturapa.gov.it/export/documenti/ws/ricezione/v1.0/RicezioneFatture_v1.0.wsdl",
+    "sha256": "78c1c91957a151f9c9606dbc42a51dbaac08ac5dc823468b58ed46f926723843",
+    "retrievedAt": "2026-11-12"
+  },
+  {
+    "file": "RicezioneTypes_v1.0.xsd",
+    "url": "https://www.fatturapa.gov.it/export/documenti/ws/ricezione/v1.0/RicezioneTypes_v1.0.xsd",
+    "sha256": "1c480c930403cecc92d1cd67d21ac7a1ade2c5d595ce1fdc4e7000174f2960de",
+    "retrievedAt": "2026-11-12"
+  },
+  {
+    "file": "TrasmissioneFatture_v1.1.wsdl",
+    "url": "https://www.fatturapa.gov.it/export/documenti/ws/trasmissione/v1.0/TrasmissioneFatture_v1.1.wsdl",
+    "sha256": "da80f4044754c923ed9df07c1d02112f1cf69393ea4472525482da089addc125",
+    "retrievedAt": "2026-11-12"
+  },
+  {
+    "file": "TrasmissioneTypes_v1.1.xsd",
+    "url": "https://www.fatturapa.gov.it/export/documenti/ws/trasmissione/v1.0/TrasmissioneTypes_v1.1.xsd",
+    "sha256": "e72fbcc91eae4dc497fb5ea662f2f2407187766dae72d39cacd5a5a9f877e5da",
+    "retrievedAt": "2026-11-12"
+  }
+]

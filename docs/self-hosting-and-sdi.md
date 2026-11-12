@@ -12,7 +12,7 @@ Reviewed against the official public pages on **12 November 2026**. The private 
 | Operate its own direct SdI channel and receive invoices on its own code | Complete channel development, accreditation, interoperability tests and production activation. Then request the recipient code. |
 | Offer a shared application to several companies | Enable multi-tenant mode. Each company needs its own membership, invoice data and provider authorization. The operator can use an accredited provider or complete its own accreditation. |
 
-**Current release:** OpenFatture runs the workspace, drafts and payment records. Its direct SdI transport, qualified signing and compliant conservation are not implemented. Deploying the app or entering a code does not activate invoice transmission or reception. See the [implementation scope](product-research.md).
+**Current release:** OpenFatture runs the workspace, drafts and payment records. A separate incoming SdI **TEST** receiver is implemented and deployed in the reviewed operator environment, with quarantined transport storage and production paths disabled. There is no outgoing invoice sender, live SMTS adapter, qualified request signing or compliant conservation. No actual authenticated SdI delivery or interoperability pass has been recorded. Deploying the app or entering a code does not activate a production channel. See the [integration testing status](sdi-integration-testing.md) and [implementation scope](product-research.md).
 
 ## Understand the three different identifiers
 
@@ -54,7 +54,7 @@ Use the official [Sistema di Accreditamento guide, version 2.0](https://www.fatt
 
 **IT administrator:** read the current [SdI technical documentation](https://www.fatturapa.gov.it/it/norme-e-regole/DocumentazioneSDI/). For the Web Service route, implement the current SdICoop reception interface, notification handling and certificate requirements. Arrange continuous monitoring, certificate renewal, backups and incident ownership.
 
-The chosen channel must support **receiving**. Web Service channels can be accredited for sending, receiving or both. SFTP accreditation covers both directions. Self-hosting this release's HTTP API is not sufficient: that API is a business application API, not the SdICoop SOAP receiving endpoint.
+The chosen channel must support **receiving**. Web Service channels can be accredited for sending, receiving or both. SFTP accreditation covers both directions. Self-hosting the business HTTP API is not sufficient: that API accepts business JSON, not SdICoop SOAP. The separate incoming TEST gateway implements receiving and notification transport and stores artifacts in quarantine. Its deployment must be configured explicitly and followed by portal registration, authenticated SdI tests and the remaining operational controls; it does not import fiscal invoices into the workspace or authorize production.
 
 ### 3. Open the current accreditation system
 
@@ -66,7 +66,7 @@ For Web Service channels, follow the portal's CSR and certificate-generation ste
 
 ### 4. Complete the tests and activate production
 
-**IT administrator and authorized operator:** run the interoperability cases requested by the portal, resolve failures, then review and accept the generated **Accordo di Servizio**. Request **Passaggio in produzione** and confirm the channel's production state in the portal.
+**IT administrator and authorized operator:** use the exact published TEST EPRs from the restricted operator-readiness view. The reviewed deployment has verified server TLS and rejection of anonymous/own-client connections, but no actual authenticated SdI handshake, acknowledgement or stored delivery yet. Review the missing CRL/revocation configuration, then run the interoperability cases requested by the portal, resolve failures, and review and accept the generated **Accordo di Servizio**. Request **Passaggio in produzione** and confirm the channel's production state in the portal.
 
 The current procedure is documented under [Processo per nuovo accreditamento](https://www.fatturapa.gov.it/it/SistemaAccreditamento/processo-per-nuovo-accreditamento/). Older instructions about a signed ZIP sent by PEC describe a previous process and should not be used as the starting procedure.
 
@@ -78,7 +78,7 @@ After production activation of a receiving channel, use the accreditation system
 
 Return to [Fatture e Corrispettivi](https://ivaservizi.agenziaentrate.gov.it/) and register that code as the company's receiving address, following Route A steps 2–5. A recipient-code request and a taxpayer's address registration are two separate operations.
 
-**What you should have at the end:** an active receiving channel, its assigned code, the accepted agreement, monitored endpoints, protected certificates and a registered company receiving address. Finish the OpenFatture transport implementation and verify reception before moving suppliers to the channel.
+**What you should have at the end:** an active receiving channel, its assigned code, the accepted agreement, monitored endpoints, protected certificates and a registered company receiving address. Finish the business import/reconciliation and production activation work, then verify authorized production reception before moving suppliers to the channel. The deployed TEST receiver alone does not satisfy this outcome.
 
 ## Enable mass-download services separately
 

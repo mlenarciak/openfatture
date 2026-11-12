@@ -63,6 +63,9 @@ flowchart LR
   API --> Membership["DynamoDB memberships and company records"]
   Future["Future accredited transport adapter"] -.-> Queue["SQS / dead-letter queue"]
   Future -.-> Files["Private S3 artifacts"]
+  SdITest["SdI TEST callbacks"] --> ALB["Separate ALB: mutual TLS + TEST peer pin"]
+  ALB --> Receiver["Fargate SOAP receiver"]
+  Receiver --> Inbox["Isolated encrypted TEST inbox"]
 ```
 
 Read the [AWS review](docs/aws-review.md) for the initial account inspection, the [deployment record](docs/deployment.md) for the live production service, and the [deployment runbook](infra/README.md) for deployment and operations. The repository's CI checks and synthesizes without deploying.
@@ -87,6 +90,7 @@ Enable the public browser demo with `-c publicDemo=true` on **synth, diff and de
 | `npm run check` | Type-check, run unit/API/infra tests and build |
 | `npm run test:e2e` | Browser workflow tests; install Chromium with `npx playwright install chromium` first |
 | `npm run sdi:check` | Offline official-source checks and integration readiness report; never sends fiscal data |
+| `npm run sdi:certificates -- --help` | Read-only certificate, key-match, CA-chain and TEST-peer verification; no network requests |
 | `npm run test:integration` | Offline XML/SMTS tests; Python 3.10+, `scripts/sdi-requirements.txt` and npm dependencies required for full coverage |
 | `npm run infra:synth -- -c stage=dev` | Generate CloudFormation locally |
 | `npm run infra:diff -- -c stage=dev` | Review target-account changes |
@@ -97,8 +101,9 @@ Enable the public browser demo with `-c publicDemo=true` on **synth, diff and de
 | --- | --- |
 | `apps/web` | Vite, React, TanStack Router, Query and Table; Italian UI |
 | `apps/api` | Fastify service, Lambda adapter, local/DynamoDB persistence, authorization |
+| `apps/sdi-gateway` | TEST-only SOAP callback receiver, pinned official WSDL/XSD and isolated durable inbox |
 | `packages/domain` | Zod request contracts and fixed-point money calculations |
-| `infra` | Retained data/identity stack and application stack |
+| `infra` | Retained data/identity stack, application stack and optional SdI TEST gateway |
 | `docs` | Company onboarding, integration research and AWS review |
 | `docs/references/sdicoop` | Official v1.5 protocol schemas/WSDL and source checksums |
 
@@ -107,5 +112,7 @@ Enable the public browser demo with `-c publicDemo=true` on **synth, diff and de
 This release provides a working preparation and management application. **It does not submit or receive fiscal invoices, sign SMTS requests or provide compliant conservation.** “Ready” means prepared locally. Exported invoice XML is a draft and is not certified against the current FatturaPA rules. Mass jobs remain `awaiting_configuration`.
 
 The [SdI integration testing checklist](docs/sdi-integration-testing.md) separates offline tests, provider simulations and accredited-channel tests, and lists the exact blockers for each. The [product research](docs/product-research.md) maps delivered features to the Agenzia and Fatture in Cloud documentation. The optional server-side Fatture in Cloud adapter only reads authorized company information. Public OAuth onboarding, provider writes and webhook synchronization are not implemented.
+
+The separate [SdI TEST receiver](apps/sdi-gateway/README.md) supports the eight receiving/notification SOAP operations, persists quarantined attachments before acknowledging, and checks the incoming TEST peer through mutual TLS and an exact certificate pin. It does not send invoices or import received files into company records. Its optional AWS stack has separate certificate/trust prerequisites and recurring costs; follow the [gateway runbook](infra/SDI-TEST-GATEWAY.md). The application's certificate and endpoint status is visible only to administrators of the configured operator tenant. The public demo never receives that metadata.
 
 Production storage currently keeps each company's records in a versioned aggregate with a 350 KB application ceiling. Conditional writes prevent lost updates. Split storage into per-record items before higher-volume operation. Local JSON storage supports one API process. VAT handling is limited to the supported domestic rates; see the API documentation for fiscal scope.

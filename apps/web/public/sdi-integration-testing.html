@@ -8,10 +8,14 @@
 <main id="content" tabindex="-1"><h1 id="before-testing-the-sdi-integration">Before testing the SdI
 integration</h1>
 <p><strong>Decision on 12 November 2026: GO for offline checks; NO-GO
-for connecting this release to SdI, SMTS or a Fatture in Cloud send
-workflow.</strong> The public demonstration and successful AWS
-deployment test the application. They do not establish channel
-accreditation, taxpayer authorization or fiscal correctness.</p>
+for outgoing invoice submission, SMTS remote operations, Fatture in
+Cloud sending or fiscal production traffic.</strong> A separate
+<strong>incoming TEST receiver is implemented and deployed</strong> in
+the reviewed operator environment. Register/review its test EPRs through
+the authorized accreditation operator, review the revocation gap, then
+coordinate the prescribed incoming SdI test. Interoperability is
+<strong>not performed</strong>; deployment is not channel accreditation,
+taxpayer authorization or fiscal correctness.</p>
 <p>This guide tells the company administrator what to prepare and gives
 developers a test plan. Nobody needs to share SPID credentials, private
 keys, signing PINs or provider tokens in a support conversation. Keep
@@ -33,14 +37,16 @@ integration you intend to test</h2>
 <td>Direct SdICoop invoice transmission</td>
 <td>Your accredited channel sends invoice files to SdI and receives
 asynchronous notifications</td>
-<td>Draft XML export; no SOAP sender, certificates, callbacks or receipt
-processing</td>
+<td>Draft XML export plus a deployed incoming TEST notification gateway;
+no outgoing SOAP sender or end-to-end business reconciliation</td>
 </tr>
 <tr class="even">
 <td>Direct SdICoop invoice reception</td>
 <td>SdI calls your accredited receiving endpoint with invoice files and
 metadata</td>
-<td>No inbound invoice endpoint or import pipeline</td>
+<td>Incoming TEST SOAP/MTOM gateway deployed with mTLS TEST-CA
+verification and exact peer pinning; authenticated SdI delivery and
+interoperability not yet evidenced; no business import pipeline</td>
 </tr>
 <tr class="odd">
 <td>SMTS mass services over SdICoop</td>
@@ -201,11 +207,120 @@ manual v3.3</a>, <a
 href="https://www.fatturapa.gov.it/export/documenti/Specifiche-tecniche-relative-al-Sistema-di-Interscambio-versione-1.8.4.pdf">channel
 rules v1.8.4</a>.</p>
 <p>The deployed <code>/api/*</code> routes require a Cognito token and
-accept business JSON; they are not these SOAP endpoints. A future
-callback path needs its own verified transport/provider authentication,
-payload handling and tenant resolution. Do not disable authentication
-across the business API to make a callback reachable. Do not trust an
-inbound <code>X-Company-Id</code> header to route fiscal data.</p>
+accept business JSON; they are not these SOAP endpoints. The separate
+incoming TEST gateway uses its own mTLS TEST-CA verification, exact
+approved peer pin, bounded SOAP/MTOM parsing and fixed server-owned
+storage context. Do not disable authentication across the business API
+to make callbacks reachable, and do not trust an inbound
+<code>X-Company-Id</code> header to route fiscal data. The gateway
+quarantines test artifacts; it does not assign fiscal invoices to an
+application company.</p>
+<h2 id="certificate-and-test-endpoint-preparation-update">Certificate
+and test endpoint preparation update</h2>
+<p><strong>Operator update, 12 November 2026:</strong> channel
+client/server certificates have been supplied, and local certificate/key
+matches, validity, extended TLS purposes, CA self-signatures and
+certificate chains have been checked. Operator identities chain to the
+supplied production CA, while the incoming SdI TEST peer must validate
+exclusively against the supplied TEST CA. The server identity is now
+installed on the dedicated incoming TEST service; the verified outgoing
+client identity is not in use because an outgoing sender has not been
+implemented. Installation, revocation and interoperability remain
+separate checks.</p>
+<table tabindex="0">
+<thead>
+<tr class="header">
+<th>Gate</th>
+<th>Evidence and current status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Certificate inventory and key match</td>
+<td>Certificates received; local key matches, validity and required TLS
+purposes checked. Certificate common names, validity dates and protected
+installation references belong in the operator's restricted inventory.
+No certificate or private-key material is published in this guide or
+repository.</td>
+</tr>
+<tr class="even">
+<td>Certificate installation</td>
+<td>Server identity installed for the deployed incoming TEST service;
+its TLS chain and hostname were verified. The outgoing client identity
+is verified but not loaded into an active sender. The browser site's
+certificate and channel identity serve different endpoints and
+purposes.</td>
+</tr>
+<tr class="odd">
+<td>Approved peer trust</td>
+<td>Offline chain, identity and TLS-client purpose checks passed. The
+deployed listener trusts only the incoming TEST CA and the gateway
+requires the exact approved peer pin. Anonymous connections and the
+operator's own client certificate were rejected. No actual authenticated
+SdI handshake has been demonstrated. <strong>No CRL is
+installed</strong>; review and implement the approved revocation policy
+before relying on connected-test evidence.</td>
+</tr>
+<tr class="even">
+<td>Test callback endpoints</td>
+<td>Incoming TEST gateway deployment completed on <strong>12 November
+2026 at 17:17:51 UTC</strong>, with one healthy service task. Receiving
+and notification EPRs at <code>/test/RicezioneFatture</code> and
+<code>/test/TrasmissioneFatture</code> are published. Obtain the full
+configured HTTPS origin from the restricted operator-readiness view and
+confirm those exact EPRs with the accreditation operator.</td>
+</tr>
+<tr class="odd">
+<td>Interoperability</td>
+<td><strong>Not performed.</strong> There is no actual authenticated SdI
+handshake, acknowledgement or stored SdI delivery yet. A separate
+synthetic diagnostic confirmed that the deployed task role can perform
+an encrypted conditional write and reject its duplicate; it did not
+exercise the SOAP receiver. Offline gateway tests cover
+storage-before-acknowledgement, but they do not prove those results in
+the deployed channel. A healthy task or TLS rejection is not an
+interoperability pass.</td>
+</tr>
+<tr class="even">
+<td>Production</td>
+<td>Disabled and not activated. The corresponding
+<code>/prod/RicezioneFatture</code> and
+<code>/prod/TrasmissioneFatture</code> names are not permission to
+receive or send production traffic. Production activation remains a
+separate recorded decision.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Incoming TEST peer renewal:</strong> the reviewed kit's
+incoming SdI TEST peer certificate expires on <strong>5 December 2026 at
+10:24:02 UTC</strong>, approximately 23 days after this review. This is
+a different certificate from the operator's client/server identities and
+from the remote SdI server certificate. Obtain the updated incoming TEST
+peer from the official accreditation material before that deadline,
+verify its TEST chain, identity, purpose and fingerprint, then update
+the authorized pin and the approved CRL/revocation configuration. Do not
+bypass TLS or certificate checks to keep an expired test peer working.
+This deadline does not establish any production activation status.</p>
+<p><strong>Next operator steps:</strong> confirm the published HTTPS
+origin and these two EPRs in the restricted readiness view,
+record/register them in the authorized accreditation workflow, and
+review the missing CRL/revocation controls. Coordinate the actual
+incoming TEST case with the Agenzia. Capture the authenticated peer,
+acknowledgement and durable test-inbox evidence before recording the
+case outcome. Keep receiving invoices (<code>RicezioneFatture</code>)
+distinct from receiving transmission notifications
+(<code>TrasmissioneFatture</code>). No local probe using the operator's
+own client identity can impersonate the incoming SdI TEST peer. No
+outgoing sender or production channel has been enabled.</p>
+<p>The application's operator-readiness view is intended only for an
+administrator of the tenant assigned to that channel. Other tenants and
+the public demonstration must not receive the operator certificate
+identities, issued-certificate validity dates or private storage
+references. The shared SdI TEST-peer renewal deadline above is public
+operational guidance. The public demo remains simulated and
+browser-local. This guide deliberately describes the workflow without
+publishing the operator's certificate common names or certificate
+files.</p>
 <h2 id="implementation-blockers-to-close">Implementation blockers to
 close</h2>
 <p>These findings come from the current <a
@@ -218,10 +333,13 @@ contracts</a> and infrastructure. They are implementation findings, not
 statements that the Agenzia has rejected a test.</p>
 <ul>
 <li><strong>Not complete:</strong> <strong>Define and implement the
-selected adapter.</strong> There is no invoice SOAP transport, receiving
-service, notification processor, SMTS worker or FIC document connector.
-The infrastructure's SQS/S3 resources are reserved foundations with no
-fiscal consumer.</li>
+selected adapter.</strong> An isolated incoming TEST gateway is
+implemented and deployed. It safely parses the pinned SOAP/MTOM
+transport, enforces the configured peer boundary and quarantines test
+artifacts. There is no invoice SOAP sender, complete
+notification-to-business-state processor, SMTS worker or FIC document
+connector. The business API's outbox foundations remain unused for
+fiscal sending; the gateway has a separate private TEST inbox.</li>
 <li><strong>Not complete:</strong> <strong>Freeze the fiscal
 document.</strong> Keep immutable seller/buyer data, numbering/series,
 document version, approved XML bytes, hash, transmission filename and
@@ -258,8 +376,10 @@ preserve raw receipts and their provenance.</li>
 safe.</strong> Atomically persist the immutable snapshot and outbox
 intent; assign tenant-scoped idempotency and correlation identifiers;
 reconcile an ambiguous timeout before retrying a send. Payment
-idempotency and aggregate optimistic concurrency already exist but do
-not deduplicate fiscal submissions or callbacks. Current company
+idempotency and aggregate optimistic concurrency already exist. The
+incoming TEST gateway also deduplicates deliveries with semantic/wire
+hashes and conditional object writes, but outgoing submission recovery
+and business reconciliation remain unimplemented. Current company
 aggregates have a 350 KB ceiling and are unsuitable for bulk
 invoice/archive storage.</li>
 <li><strong>Not complete:</strong> <strong>Bind legal authority to each
@@ -268,13 +388,16 @@ provider/channel, receiving code and signer/delegation evidence. Scope
 all jobs, archive IDs, webhook subscriptions and receipt lookups to that
 mapping. Test expired/revoked/mismatched authorization and quarantine
 unresolvable inbound documents.</li>
-<li><strong>Not complete:</strong> <strong>Implement trusted ingestion
-and reconciliation.</strong> Verify the channel peer or provider
-notification token, safely parse XML/attachments, enforce size limits,
-deduplicate events and handle late/out-of-order receipts. FIC uses its
-own signed notification token, not a Cognito access token; subscription
-verification, expiry and re-fetch of authoritative resource state also
-require implementation. <a
+<li><strong>Not complete:</strong> <strong>Complete trusted ingestion
+and business reconciliation.</strong> The incoming TEST gateway
+implements peer restrictions, bounded transport parsing, duplicate
+handling and quarantined storage; it does not perform fiscal validation
+or update company invoice states. Complete the controlled processing,
+taxpayer mapping and late/out-of-order receipt reconciliation. Other
+provider routes still need their own verified notification token and
+parsing boundary. FIC uses its own signed notification token, not a
+Cognito access token; subscription verification, expiry and re-fetch of
+authoritative resource state also require implementation. <a
 href="https://developers.fattureincloud.it/docs/webhooks/notifications/">FIC
 notifications</a>.</li>
 <li><strong>Not complete:</strong> <strong>Complete SMTS policy and
@@ -335,28 +458,44 @@ fail before sending</td>
 suite <strong>missing</strong></td>
 </tr>
 <tr class="odd">
-<td>1 · mocked adapter</td>
-<td>Correct SOAP/MTOM or provider JSON; response correlation; 401/403,
-429/Retry-After, SOAP fault, timeouts and duplicate/out-of-order
-notifications</td>
-<td>Adapter and fixtures <strong>missing</strong>; no external
-credentials needed to build them</td>
+<td>1 · incoming gateway fixtures</td>
+<td>Exact pinned SOAP/MTOM operations, 5 MiB files, bounded payloads,
+unsafe XML rejection, durable writes before ACK and idempotent
+retry</td>
+<td><code>apps/sdi-gateway/test/gateway.test.ts</code> and
+<code>adapters.test.ts</code>; synthetic offline fixtures, not an
+authenticated AWS delivery</td>
 </tr>
 <tr class="even">
-<td>1 · recovery/isolation</td>
-<td>Crash after intent/before send/after remote acceptance; replay
-delivers one logical submission; malicious/foreign callback cannot
-modify another taxpayer</td>
-<td>Fiscal outbox, inbox and reconciliation tests
+<td>1 · outbound/provider adapter</td>
+<td>Provider JSON or outgoing SOAP, correlation, 401/403, throttling,
+ambiguous timeout and late/out-of-order responses</td>
+<td>Outgoing/provider adapter and recovery fixtures
 <strong>missing</strong></td>
 </tr>
 <tr class="odd">
-<td>2 · channel/test environment</td>
-<td>Prove approved test endpoint, certificates/peer trust, network
-reachability and registered callback; complete prescribed
-interoperability cases and inspect captured receipts</td>
-<td><strong>NO-GO now</strong>; direct-channel implementation and
-company evidence required</td>
+<td>1 · recovery/isolation</td>
+<td>Crash after intent/before send/after remote acceptance; replay and
+taxpayer isolation</td>
+<td>Incoming TEST partial-write/retry and server-owned context covered
+offline; outgoing fiscal outbox and company reconciliation tests
+<strong>missing</strong></td>
+</tr>
+<tr class="even">
+<td>2 · incoming TEST deployment</td>
+<td>Publish the isolated receiver; verify server TLS and reject
+unauthorized callers</td>
+<td>Deployed at 17:17:51 UTC; one healthy task; server chain/hostname
+verified; anonymous and own-client connections rejected; TEST CA plus
+exact pin configured; <strong>no CRL installed</strong></td>
+</tr>
+<tr class="odd">
+<td>2 · incoming TEST interoperability</td>
+<td>Register/review exact EPRs, review revocation controls, then perform
+the prescribed authenticated incoming SdI cases</td>
+<td><strong>Next scoped step, not a pass:</strong> portal registration
+and real SdI TEST handshake/ACK/stored delivery evidence pending;
+interoperability <code>not_performed</code>; no outgoing sender</td>
 </tr>
 <tr class="even">
 <td>2 · provider simulation</td>
@@ -416,7 +555,7 @@ technical instructions v1.5</a>.</p>
 <h2 id="run-the-safe-checks-now">Run the safe checks now</h2>
 <p>From the repository root, after <code>npm ci</code>, using Python
 3.10+:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--json</span></span>
+<div class="sourceCode" id="cb1"><pre tabindex="0" class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--json</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-B</span> <span class="at">-m</span> unittest discover <span class="at">-s</span> tests/integration <span class="at">-p</span> <span class="st">&#39;test_sdi_preflight.py&#39;</span> <span class="at">-v</span></span></code></pre></div>
 <p>The baseline uses Python's standard library for hashes and WSDL
 inspection. <strong>Actual XSD compilation/validation additionally
@@ -427,11 +566,13 @@ install the pinned validator during setup if absent; the checker never
 installs or downloads anything. Without it, XSD checks are explicitly
 <code>not_run</code>, not passes. Run structural checks on the included
 fictional fixtures:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--xml</span> tests/integration/fixtures/draft-invoice-synthetic.xml <span class="at">--schema</span> invoice</span>
+<div class="sourceCode" id="cb2"><pre tabindex="0" class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--xml</span> tests/integration/fixtures/draft-invoice-synthetic.xml <span class="at">--schema</span> invoice</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--xml</span> tests/integration/fixtures/smts-input-valid.xml <span class="at">--schema</span> smts-input</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--require-sandbox-ready</span> <span class="at">--json</span></span></code></pre></div>
-<p>The final command deliberately exits <strong>2</strong> while the
-reviewed release lacks integration readiness. Other exit codes:
+<p>The final command deliberately exits <strong>2</strong> for the
+broader sender/SMTS integration-readiness gate. The offline checker does
+not inspect or attest to the deployed incoming TEST receiver, its portal
+registration or a real SdI delivery. Other exit codes:
 <strong>0</strong> means the requested offline checks passed;
 <strong>1</strong> means an offline check failed. <code>--xml</code> and
 <code>--schema</code> must be supplied together. The available profiles
@@ -453,13 +594,75 @@ and mixed-rate/fractional-quantity cases. It confirms that an overlong
 denomination fails the official schema and quotes are refused. These
 cases are not proof that all possible exports or fiscal business rules
 are valid.</p>
+<h2 id="reproduce-the-offline-certificate-checks">Reproduce the offline
+certificate checks</h2>
+<p>The read-only helper <code>scripts/sdi-verify-certificates.ts</code>
+requires the installed TypeScript runner, Node.js and <strong>OpenSSL 3
+or newer</strong>. It reads only the explicitly named certificates and
+local private keys. It supports single certificates in PEM, DER or raw
+base64 and unencrypted PEM/DER private keys. It never imports into AWS
+or a trust store, makes network calls, requests passwords, prints keys
+or changes the supplied files. Only normalized <strong>public</strong>
+certificates are written to a private temporary directory, which is
+removed after verification.</p>
+<p>An authorized operator can supply the protected local paths and the
+independently confirmed expected taxpayer, hostname and incoming TEST
+peer pin:</p>
+<div class="sourceCode" id="cb3"><pre tabindex="0" class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> <span class="at">--import</span> tsx scripts/sdi-verify-certificates.ts <span class="at">--help</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> <span class="at">--import</span> tsx scripts/sdi-verify-certificates.ts <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--client</span> /secure/channel/client.cer <span class="at">--client-key</span> /secure/channel/client.key <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--server</span> /secure/channel/server.cer <span class="at">--server-key</span> /secure/channel/server.key <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--production-ca</span> /secure/channel/production-ca.pem <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--test-ca</span> /secure/channel/test-ca.pem <span class="at">--test-peer</span> /secure/channel/incoming-test-peer.cer <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--tax-code</span> <span class="st">&quot;</span><span class="va">$OPENFATTURE_TAX_CODE</span><span class="st">&quot;</span> <span class="at">--hostname</span> <span class="st">&quot;</span><span class="va">$OPENFATTURE_CHANNEL_HOSTNAME</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--test-peer-sha256</span> <span class="st">&quot;</span><span class="va">$OPENFATTURE_TEST_PEER_SHA256</span><span class="st">&quot;</span></span></code></pre></div>
+<p>The additional optional <code>--test-peer-cn</code> selects an
+independently approved incoming identity; by default the helper expects
+<code>Sistema Interscambio Fattura PA</code> and the TEST anchor common
+name <code>CA Agenzia delle Entrate Test</code>. Operator client/server
+chains use the supplied production CA even for interoperability; the
+incoming TEST peer uses <strong>only</strong> the supplied TEST CA with
+TLS-client purpose. A production-issued peer with the same common name
+must fail this test check. Server hostname validation checks DNS SAN
+first and explicitly permits common-name fallback only when no DNS SAN
+is present. The client common name must exactly equal <code>SDI-</code>
+followed by the supplied tax code. Private-key matches, distinct
+client/server SPKI key pairs, explicit EKU, certificate validity, CA
+status, self-signatures, purpose and selected chains are checked
+independently. Obtain the roots through the approved official process:
+checking a supplied self-signed root does not independently establish
+its portal provenance or public browser/web CA trust.</p>
+<p>The JSON report contains public certificate metadata and named
+pass/fail checks, without private keys, PEM bodies, source paths or raw
+OpenSSL errors. Keep the report in the restricted operator record
+because public certificate metadata can still identify the channel
+operator. The optional pin is compared when supplied; otherwise the
+computed TEST peer fingerprint is merely recorded, not independently
+confirmed. Exit <strong>0</strong> means all requested offline checks
+passed; <strong>1</strong> means verification failed; <strong>2</strong>
+means the CLI arguments were invalid. Revocation, CRL freshness,
+endpoint reachability and interoperability are explicitly <strong>not
+checked</strong>.</p>
+<p>The helper does not scan an entire kit directory. An unrelated
+expired production remote-server certificate is not an input to this
+incoming TEST peer check and does not justify weakening the test trust
+policy. Conversely, this helper does not validate that remote production
+server for a later outbound connection. The maintenance tests in
+<code>apps/api/test/sdi-certificates.test.ts</code> generate only
+temporary synthetic CA/leaf certificates and keys; no supplied operator
+certificates or keys are committed as fixtures.</p>
 <h2 id="source-versions-and-review-limits">Source versions and review
 limits</h2>
 <p>Reviewed on <strong>12 November 2026</strong>. Agenzia pages that
 returned 403 in the research browser were retrieved directly over HTTPS.
 Published versions were read from document contents/current listings,
-not inferred from old URL labels. This is a requirements review; no
-channel, signer, delegation or provider credential was supplied or
+not inferred from old URL labels. The requirements review was followed
+by receipt and local key matching of operator channel certificates.
+Offline chain, purpose and distinct-key checks have passed. The incoming
+TEST gateway is deployed with negative caller tests; actual
+authenticated SdI delivery, CRL configuration and prescribed
+interoperability remain pending as recorded above. No qualified signer,
+taxpayer delegation or provider sending credential has been
 exercised.</p>
 <table tabindex="0">
 <thead>
@@ -499,8 +702,9 @@ integration bundle</td>
 <td>Invoice WS interfaces</td>
 <td>Transmission/reception manuals <strong>3.3</strong>; separately
 versioned WSDL/XSD</td>
-<td>Official listing above; must pin the chosen
-sender/receiver/notification contracts before adapter work</td>
+<td>Receiver/notification WSDL and XSD bytes pinned in
+<code>apps/sdi-gateway/references/sources.json</code>; outgoing sender
+still unimplemented</td>
 </tr>
 <tr class="odd">
 <td>Accreditation</td>

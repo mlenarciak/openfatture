@@ -15,3 +15,11 @@ cdk-outputs*.json
 __pycache__/
 *.pyc
 .venv/
+*.key
+*.pem
+*.cer
+*.crt
+*.csr
+*.der
+*.p12
+*.pfx

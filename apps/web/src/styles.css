@@ -509,3 +509,46 @@
 .product-preview .preview-table [data-slot=badge] {font-size:7px;}
 .product-preview .preview-heading>div>span {font-size:8px;}
 @media(max-width:430px){.product-preview .preview-table>div {gap:5px;}.product-preview .preview-table>div>span:not([data-slot]) {max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.product-preview .preview-table>div>strong:last-child {min-width:56px;}.product-preview .preview-table>div>svg {width:12px;height:12px;}.product-preview .preview-metrics small {font-size:7px;}.product-preview .preview-foot {font-size:7px;}}
+
+/* Operator-only channel readiness stays distinct from SMTS and fiscal document states. */
+.integration-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+.sdi-demo-note {margin-top:25px;}
+.sdi-operator-card {margin-top:25px;--card-spacing:24px;}
+.sdi-operator-heading {display:flex;align-items:flex-start;gap:15px;}
+.sdi-operator-heading>div:nth-child(2) {flex:1;min-width:0;}
+.sdi-operator-heading [data-slot=card-title] {font-size:18px;line-height:1.5;letter-spacing:-.4px;}
+.sdi-operator-heading [data-slot=card-description] {font-size:12px;line-height:1.9;margin-top:8px;}
+.sdi-operator-heading>[data-slot=badge] {margin-top:4px;}
+.sdi-operator-icon {display:grid;place-items:center;width:43px;height:43px;background:var(--muted);color:var(--text-accent);flex-shrink:0;}
+.sdi-readiness-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+.sdi-readiness-step {padding:18px;border:1px solid var(--border);}
+.sdi-readiness-step>div {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.sdi-readiness-step>div>strong {font-size:13px;font-weight:500;}
+.sdi-readiness-step [data-slot=badge] {font-size:11px;}
+.sdi-readiness-step>p {font-size:12px;line-height:1.9;color:var(--muted-foreground);margin-top:12px;}
+.sdi-certificate-details,.sdi-test-endpoints {padding-top:25px;margin-top:25px;border-top:1px solid var(--border);}
+.sdi-operator-card h3 {display:flex;align-items:center;gap:9px;font-size:14px;font-weight:500;margin-bottom:17px;}
+.sdi-operator-card h3>svg {color:var(--text-accent);}
+.sdi-certificate-details dl {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 25px;margin:0;}
+.sdi-certificate-details dt {font-size:11px;color:var(--muted-foreground);margin-bottom:7px;}
+.sdi-certificate-details dd {margin:0;font-size:14px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+.sdi-certificate-details>p,.sdi-test-endpoints>p {font-size:11px;line-height:1.9;color:var(--muted-foreground);margin-top:18px;}
+.sdi-endpoint {display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--border);padding:17px 18px;margin-top:12px;}
+.sdi-endpoint>div {min-width:0;flex:1;}
+.sdi-endpoint strong {display:block;font-size:12px;font-weight:500;margin-bottom:8px;}
+.sdi-endpoint code {display:block;font-size:12px;line-height:1.8;overflow-wrap:anywhere;user-select:text;}
+.sdi-endpoint>div>span {display:block;font-size:11px;line-height:1.9;color:var(--muted-foreground);margin-top:6px;}
+.sdi-production-alert {margin-top:25px;}
+.sdi-production-alert code {font-size:12px;overflow-wrap:anywhere;}
+.sdi-operator-card>[data-slot=card-footer] {display:flex;align-items:center;justify-content:space-between;gap:18px;}
+.sdi-operator-card>[data-slot=card-footer]>span {font-size:11px;line-height:1.9;max-width:580px;}
+@media(max-width:1000px){.sdi-operator-heading {flex-wrap:wrap;}.sdi-operator-heading>[data-slot=badge] {margin-left:58px;}.sdi-readiness-grid {grid-template-columns:1fr;}.sdi-operator-card>[data-slot=card-footer] {flex-wrap:wrap;}.sdi-operator-card>[data-slot=card-footer]>span {max-width:none;}}
+@media(max-width:760px){.integration-grid {grid-template-columns:1fr;}.sdi-operator-card {--card-spacing:20px;}.sdi-operator-heading [data-slot=card-title] {font-size:17px;}.sdi-operator-heading {gap:12px;}.sdi-operator-icon {width:36px;height:36px;}.sdi-operator-heading>[data-slot=badge] {margin-left:48px;}.sdi-readiness-step {padding:16px;}.sdi-readiness-step>p {font-size:12px;}.sdi-certificate-details dl {grid-template-columns:1fr;gap:18px;}.sdi-endpoint {flex-direction:column;align-items:flex-start;gap:12px;padding:16px;}.sdi-endpoint code {font-size:12px;}.sdi-production-alert {font-size:12px;}.sdi-operator-card>[data-slot=card-footer] {align-items:flex-start;}}
+
+.sdi-peer-fingerprint {font-size:12px;line-height:1.8;overflow-wrap:anywhere;}
+.sdi-peer-days {font-size:12px;color:var(--muted-foreground);}
+.sdi-peer-warning {margin-top:18px;}
+/* Keep expired-peer instructions readable without changing the supplied destructive token. */
+.sdi-peer-warning [data-slot=alert-description] {color:var(--foreground);}
+@media(max-width:1000px){.sdi-operator-heading{display:grid;grid-template-columns:43px minmax(0,1fr);gap:12px 15px;}.sdi-operator-heading>[data-slot=badge]{grid-column:2;margin-left:0;}.sdi-operator-heading>div:nth-child(2){min-width:0;}}
+@media(max-width:760px){.sdi-operator-heading{grid-template-columns:36px minmax(0,1fr);gap:11px 12px;}}

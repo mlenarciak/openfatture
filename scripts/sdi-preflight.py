@@ -19,7 +19,7 @@ SCHEMAS = {
     'smts-envelope': 'sdicoop/RichiestaServiziMassivi_v1.0.xsd',
 }
 BLOCKERS = [
-    'Direct SdICoop SOAP sender, authenticated callback receiver and reconciliation are not implemented.',
+    'Direct SdICoop SOAP sender and business-state reconciliation are not implemented; the separate incoming TEST receiver does not complete this workflow.',
     'Channel test activation, endpoint and certificate evidence has not been supplied to this offline tool.',
     'Fiscal business-rule validation, immutable submission snapshots and submission idempotency are missing.',
     'Tenant/provider/taxpayer/delegation mapping and qualified SMTS signing are not implemented.',
@@ -142,7 +142,7 @@ def build_report(root: Path = ROOT, xml: Path | None = None, profile: str | None
         'checks': checks,
         'goNoGo': {'offlineContracts': 'no-go' if failed else 'go', 'directSdiSandbox': 'no-go', 'smtsSandbox': 'no-go', 'ficSendSimulation': 'no-go', 'liveFiscalUse': 'no-go'},
         'blockers': BLOCKERS,
-        'limits': ['An XSD pass establishes XML structure only.', 'This tool does not refresh official sources, inspect deployment state, verify signatures, or certify current fiscal compliance.', 'Application browser demonstration and in-memory API tests are not SdI interoperability tests.'],
+        'limits': ['An XSD pass establishes XML structure only.', 'This tool does not refresh official sources, inspect deployment state, verify signatures, or certify current fiscal compliance.', 'The incoming-only TEST gateway is assessed separately through its deployment record and authenticated portal tests; directSdiSandbox describes the complete invoice workflow.', 'Application browser demonstration and in-memory API tests are not SdI interoperability tests.'],
     }
 
 
@@ -151,7 +151,7 @@ def main(argv=None):
     parser.add_argument('--json', action='store_true', help='Emit machine-readable report')
     parser.add_argument('--xml', type=Path, help='Optional local UTF-8 XML, maximum 2 MB; never uploaded')
     parser.add_argument('--schema', choices=SCHEMAS, help='Explicit XML profile; invoice, inner SMTS input, or outer SMTS envelope')
-    parser.add_argument('--require-sandbox-ready', action='store_true', help='Exit 2 while this release lacks transport prerequisites')
+    parser.add_argument('--require-sandbox-ready', action='store_true', help='Exit 2 while complete connected invoice/SMTS/provider workflows remain incomplete; does not inspect the incoming-only TEST gateway')
     args = parser.parse_args(argv)
     if bool(args.xml) != bool(args.schema):
         parser.error('--xml and --schema must be supplied together')
@@ -162,7 +162,8 @@ def main(argv=None):
         print(f'Offline contracts: {report["status"].upper()}')
         for check in report['checks']:
             print(f'{check["status"].upper():7} {check["id"]}')
-        print('SdI/SMTS sandbox, FIC send simulation and live fiscal use: NO-GO')
+        print('End-to-end SdI/SMTS workflows, FIC send simulation and live fiscal use: NO-GO')
+        print('Incoming-only SdI TEST gateway: not assessed by this offline checker; see the deployment record and portal test evidence.')
         print('No network calls, credentials, signing, or fiscal submissions.')
         for blocker in report['blockers']:
             print(f'- {blocker}')

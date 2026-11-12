@@ -41,6 +41,10 @@ Leggi i [requisiti ufficiali SMTS](https://www.agenziaentrate.gov.it/portale/ser
 - Per più aziende: `MULTI_TENANT=true`. Ogni utente deve avere una specifica autorizzazione per ciascuna azienda.
 - Su AWS, CDK genera la corrispondente configurazione dell'interfaccia. Accesso e autorizzazioni restano obbligatori in entrambe le modalità.
 
-In questa versione puoi preparare documenti, registrare incassi e salvare richieste interne. Il collegamento fiscale diretto, la firma qualificata e la conservazione a norma devono ancora essere implementati. L'installazione dell'app non accredita automaticamente un canale e non genera un codice.
+In questa versione puoi preparare documenti, registrare incassi e salvare richieste interne. Nell'ambiente operatore verificato è ora pubblicato un ricevitore SdI separato, limitato ai **test in ingresso**: protegge il trasporto e conserva i file di prova in un'area isolata. Il certificato server è installato; il client in uscita è verificato ma non utilizzato, perché il trasmettitore non è attivo.
+
+Il servizio ha superato i controlli sul certificato server e il rifiuto di chiamanti non autorizzati. Non sono ancora stati documentati un collegamento autenticato dell'Agenzia, una conferma di ricezione o una consegna effettiva nell'archivio AWS. L'operatore autorizzato deve registrare/verificare gli EPR di test, controllare la configurazione di revoca dei certificati (la CRL non è ancora installata) e concordare la prova con l'Agenzia. Gli indirizzi completi e i metadati dei certificati sono disponibili solo all'amministratore dell'azienda assegnata al canale.
+
+Invio delle fatture, servizi massivi remoti, importazione e riconciliazione fiscale nell'app, firma qualificata e conservazione a norma restano da completare. La produzione è disabilitata: l'installazione non accredita automaticamente un canale e non genera un codice. Consulta lo [stato dei test SdI](sdi-integration-testing.md) prima di programmare una prova.
 
 Per installare l'app: [istruzioni tecniche](../README.md). Per i passaggi dettagliati, i ruoli e la risoluzione dei problemi: [guida completa](self-hosting-and-sdi.md).

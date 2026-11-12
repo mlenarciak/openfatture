@@ -23,7 +23,27 @@ export type Payment = PaymentInput & { id: string; clientName: string; documentN
 export const bulkJobInputSchema = z.object({ type: z.enum(['invoice_download', 'receipt_download', 'stamp_duty_lists']), dateFrom: dateSchema, dateTo: dateSchema }).refine(v => v.dateTo >= v.dateFrom, { message: 'End date must be after start date', path: ['dateTo'] }).refine(v => Date.parse(v.dateTo) - Date.parse(v.dateFrom) <= 90 * 86400000, { message: 'Use date windows of at most 90 days', path: ['dateTo'] });
 export type BulkJobInput = z.infer<typeof bulkJobInputSchema>;
 export type BulkJob = BulkJobInput & { id: string; status: 'awaiting_configuration'; createdAt: string; message: string; records: number };
-export type Integration = { id: 'sdicoop' | 'fatture-in-cloud' | 'conservation'; name: string; status: 'not_configured' | 'configured' | 'unavailable'; description: string; capabilities: string[] };
+export const sdiOperatorReadinessSchema = z.object({
+  environment: z.literal('test'),
+  certificate: z.object({
+    status: z.enum(['received', 'installed', 'not_configured']),
+    keyMatch: z.enum(['verified', 'pending']),
+    clientCommonName: z.string().min(1).max(128), serverCommonName: z.string().min(1).max(253),
+    validFrom: z.iso.datetime(), validUntil: z.iso.datetime(),
+  }).strict(),
+  peerTrust: z.enum(['pending', 'verified']),
+  peerCertificate: z.object({ validUntil: z.iso.datetime(), sha256Fingerprint: z.string().regex(/^[a-f0-9]{64}$/) }).strict().optional(),
+  endpoint: z.object({
+    status: z.enum(['planned', 'deployed']),
+    baseUrl: z.url().refine(value => { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash; }, 'Use an HTTPS origin').optional(),
+    paths: z.object({ receiving: z.literal('/test/RicezioneFatture'), notifications: z.literal('/test/TrasmissioneFatture') }).strict(),
+  }).strict(),
+  interoperability: z.enum(['not_performed', 'in_progress', 'passed']),
+  production: z.object({ enabled: z.literal(false) }).strict(),
+}).strict().refine(value => Date.parse(value.certificate.validUntil) > Date.parse(value.certificate.validFrom), 'Certificate dates are invalid')
+  .refine(value => value.endpoint.status !== 'deployed' || Boolean(value.endpoint.baseUrl), 'Deployed endpoints require an origin');
+export type SdiOperatorReadiness = z.infer<typeof sdiOperatorReadinessSchema>;
+export type Integration = { id: 'sdi-channel' | 'sdicoop' | 'fatture-in-cloud' | 'conservation'; name: string; status: 'not_configured' | 'configured' | 'unavailable'; description: string; capabilities: string[]; operatorReadiness?: SdiOperatorReadiness };
 export type Dashboard = { metrics: { revenueCents: number; outstandingCents: number; overdueCents: number; draftCount: number; documentCount: number; clientCount: number }; monthly: { month: string; invoicedCents: number; collectedCents: number }[]; recentDocuments: Document[]; upcomingPayments: Document[]; activity: { id: string; label: string; date: string; type: 'document' | 'payment' | 'bulk' }[] };
 export type TenantState = { company: Company; clients: Client[]; documents: Document[]; payments: Payment[]; bulkJobs: BulkJob[]; sequence: number; version: number };
 export type ApiError = { error: { code: string; message: string; requestId: string; details?: unknown } };

@@ -4,6 +4,8 @@ The default target is the DLT account through profile `dlt`, Region `eu-south-1`
 
 Two stacks separate retained company records and identities from application code. DynamoDB has point-in-time recovery and deletion protection. S3 artifacts are private, encrypted with a rotating KMS key and versioned. SQS and a dead-letter queue are reserved for a future accredited transport adapter; this release does not consume them or claim successful SdI delivery. API mutations persist to DynamoDB with optimistic concurrency; the current bounded per-company document is a starter storage model, not a high-volume ledger.
 
+An optional, separate [SdI TEST gateway](SDI-TEST-GATEWAY.md) uses ALB mTLS VERIFY and Fargate to receive full-size test SOAP messages into an isolated inbox. It defaults off, requires reviewed certificate/CA/peer-pin context, creates always-on billable resources, and keeps production transport disabled. Public operator readiness metadata is a separate paired context documented in that runbook.
+
 CloudFront serves the Vite SPA from a private S3 origin with origin access control and rewrites extensionless routes to `index.html`. A generated `/config.json` points to the protected API and Cognito login. API Gateway requires an access token scope; the API independently verifies tokens and checks stored company membership. Cognito uses authorization code with PKCE, no client secret, admin-created users, short access tokens, revocation and refresh-token rotation. The browser keeps short-lived access tokens in session storage for the current tab and discards refresh tokens; sign out clears the stored token. Optional TOTP MFA can be enabled by administrators.
 
 ## Build and review
@@ -38,7 +40,7 @@ For the public OpenFatture deployment at `openfatture.com`, run from the reposit
 
 ```bash
 OPENFATTURE_PROD_CONTEXT=(
-  -c stage=prod -c publicDemo=true
+  -c stage=prod -c publicDemo=true -c multiTenant=true
   -c domainName=openfatture.com
   -c hostedZoneId=Z0205029353SA9C8BO1GN
   -c certificateArn=arn:aws:acm:us-east-1:509581811464:certificate/1cd10045-fa13-4a9e-8cc9-18e8b0db43c4
@@ -68,7 +70,7 @@ The inspected Roles Anywhere identity is constrained by source IP. Run deploymen
 
 API Lambda and HTTP API access logs retain one month, encrypted with the data KMS key. Logs omit request bodies and bearer tokens. CloudWatch alarms cover API errors and dead-letter backlog; wire their alarm actions to your incident channel before production. Existing account-level CloudTrail and security controls were not audited by this bounded review.
 
-All dynamic web responses use no-cache for predictable config and auth transitions. CSP restricts scripts to self; `connect-src` currently allows HTTPS endpoints because API and Cognito endpoints are generated during deployment. Tighten it to exact deployed origins when introducing a custom domain. Custom DNS is optional as described below. The stacks do not add a paid NAT gateway, always-on server, external provider secret, or live SdICoop channel.
+All dynamic web responses use no-cache for predictable config and auth transitions. CSP restricts scripts to self; `connect-src` currently allows HTTPS endpoints because API and Cognito endpoints are generated during deployment. Tighten it to exact deployed origins when introducing a custom domain. Custom DNS is optional as described below. The default two stacks do not add a paid NAT gateway, always-on server, external provider secret, or live SdICoop channel. The optional SdI TEST stack adds the separately documented always-on receiver and keeps production transport disabled.
 
 Before processing live invoices: replace the bounded company-state document with per-entity storage for anticipated volume, configure backup restore drills and alert actions, establish tenant onboarding/roles, and complete the documented SdI/provider accreditation and fiscal validation work. S3 versioning is operational storage; it does not implement compliant digital preservation.
 

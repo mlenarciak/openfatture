@@ -4,7 +4,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { z, ZodError } from 'zod';
-import { bulkJobInputSchema, calculateTotals, clientInputSchema, documentInputSchema, paymentInputSchema, type Dashboard, type Integration, type TenantState } from '@openfatture/domain';
+import { bulkJobInputSchema, calculateTotals, clientInputSchema, documentInputSchema, paymentInputSchema, sdiOperatorReadinessSchema, type Dashboard, type Integration, type TenantState } from '@openfatture/domain';
 import { authenticator, type Authenticate } from './auth.js';
 import { HttpError } from './errors.js';
 import { DynamoStore, LocalStore, type Membership, type Store } from './store.js';
@@ -15,6 +15,9 @@ export type AppOptions = { env?: NodeJS.ProcessEnv; store?: Store; authenticate?
 const validCompanyId = z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
 export function buildApp(options: AppOptions = {}) {
   const env = options.env ?? process.env;
+  if (Boolean(env.SDI_OPERATOR_TENANT_ID) !== Boolean(env.SDI_OPERATOR_READINESS_JSON)) throw new Error('Configure both SDI_OPERATOR_TENANT_ID and SDI_OPERATOR_READINESS_JSON');
+  const sdiOperatorTenantId = env.SDI_OPERATOR_TENANT_ID ? validCompanyId.parse(env.SDI_OPERATOR_TENANT_ID) : undefined;
+  const sdiReadiness = env.SDI_OPERATOR_READINESS_JSON ? sdiOperatorReadinessSchema.parse(JSON.parse(env.SDI_OPERATOR_READINESS_JSON)) : undefined;
   const multiTenant = z.enum(['true', 'false']).default('true').parse(env.MULTI_TENANT) === 'true';
   const pinnedCompanyId = multiTenant ? undefined : validCompanyId.parse(env.SELF_HOSTED_COMPANY_ID);
   const authenticate = options.authenticate ?? authenticator(env);
@@ -133,6 +136,9 @@ export function buildApp(options: AppOptions = {}) {
     state.bulkJobs.unshift(job); await save(request, state); return reply.code(201).send(job);
   });
   app.get('/api/integrations', async (request): Promise<Integration[]> => [
+    { id: 'sdi-channel', name: 'Canale SdI · collaudo', status: 'not_configured', description: 'Ricezione SOAP per il collaudo del canale. Interoperabilità da completare; produzione disabilitata.', capabilities: ['Fatture di test', 'Notifiche di test'],
+      ...(env.AUTH_MODE === 'cognito' && request.membership?.role === 'admin' && request.membership.tenantId === sdiOperatorTenantId && sdiReadiness ? { operatorReadiness: sdiReadiness } : {}),
+    },
     { id: 'sdicoop', name: 'Agenzia delle Entrate · SMTS', status: 'not_configured', description: 'Servizi massivi: richieste locali, nessun collegamento al canale accreditato.', capabilities: ['Download fatture', 'Corrispettivi', 'Elenchi bollo A/B'] },
     { id: 'fatture-in-cloud', name: 'Fatture in Cloud', status: env.FIC_ACCESS_TOKEN && env.FIC_TENANT_ID === request.membership?.tenantId ? 'configured' : 'not_configured', description: 'Adapter server di sola lettura per elenco aziende. Nessuna sincronizzazione automatica.', capabilities: ['Elenco aziende (sola lettura)'] },
     { id: 'conservation', name: 'Conservazione digitale', status: 'unavailable', description: 'Conservazione a norma non attiva. Il backup dei file non sostituisce la conservazione.', capabilities: [] },

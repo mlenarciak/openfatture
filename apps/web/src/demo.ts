@@ -75,6 +75,7 @@ function findDocument(tenant: TenantState, id: string) {
 }
 function save(snapshot: Snapshot, tenant: TenantState) { tenant.version += 1; write(snapshot); }
 const disabledIntegrations: Integration[] = [
+  { id: 'sdi-channel', name: 'Canale SdI · Ambiente di test', status: 'not_configured', description: 'Solo simulazione. Certificati operatore ed endpoint riservati non sono disponibili nella demo; nessun invio o ricezione fiscale.', capabilities: ['Ricezione e notifiche (simulazione)', 'Produzione disabilitata'] },
   { id: 'sdicoop', name: 'Agenzia delle Entrate · SMTS', status: 'not_configured', description: 'Demo senza collegamento all’Agenzia. Le richieste restano in questa scheda.', capabilities: ['Download fatture (simulazione locale)', 'Corrispettivi (simulazione locale)', 'Elenchi bollo A/B (simulazione locale)'] },
   { id: 'fatture-in-cloud', name: 'Fatture in Cloud', status: 'not_configured', description: 'Integrazione disattivata nella demo. Nessuna credenziale richiesta.', capabilities: [] },
   { id: 'conservation', name: 'Conservazione digitale', status: 'unavailable', description: 'Conservazione a norma non disponibile nella demo.', capabilities: [] },
