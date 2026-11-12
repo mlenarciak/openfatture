@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic contract fixture only. Never submit this taxpayer identifier to any service. -->
+<InputMassivo xmlns="http://www.sogei.it/InputPubblico">
+  <TipoRichiesta><Fatture>
+    <Richiesta>FATT</Richiesta>
+    <ElencoPiva><Piva>00000000000</Piva></ElencoPiva>
+    <TipoRicerca>PUNTUALE</TipoRicerca><TipoOutput>FILE_FATTURA</TipoOutput>
+    <FattureDataAcc><DataAccoglienza><Da>2026-10-01</Da><A>2026-10-31</A></DataAccoglienza><Flusso><FatturaB2B>ALL</FatturaB2B></Flusso><Ruolo><Cedente>CEDENTE</Cedente></Ruolo></FattureDataAcc>
+  </Fatture></TipoRichiesta>
+</InputMassivo>

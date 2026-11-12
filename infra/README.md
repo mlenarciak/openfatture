@@ -32,6 +32,16 @@ Use `-c stage=prod` for separate production stacks; the production data stack en
 
 ## Provision access
 
+The public product entry is `/`, the invited company sign-in entry is `/login`, and the optional anonymous browser demo is `/demo`. Set `-c publicDemo=true` consistently for synthesis, diff and deployment to expose **Prova la demo**. This flag defaults to `false`, accepts only strict booleans, and is independent of `multiTenant`. It configures only browser behavior: generated runtime authentication remains `cognito`, API routes still require JWTs, and no demonstration data is inserted in DynamoDB. Demo documents, payments and clients live in tab-local `sessionStorage`; reset/exit controls are available throughout the demo. The local development API's `AUTH_MODE=demo` remains prohibited in Lambda/production.
+
+For the public OpenFatture deployment, run from the repository root:
+
+```sh
+AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:synth -- -c stage=prod -c publicDemo=true
+AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:diff -- -c stage=prod -c publicDemo=true
+AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:deploy -- -c stage=prod -c publicDemo=true
+```
+
 The pool disables public self-registration. Replace `USER_POOL_ID` with the deployment output and the example address with an independently verified operator address. Explicitly select email delivery because the [CLI defaults to SMS](https://docs.aws.amazon.com/cli/latest/reference/cognito-idp/admin-create-user.html). Set `email_verified=true` only after verifying ownership of that address:
 
 ```sh

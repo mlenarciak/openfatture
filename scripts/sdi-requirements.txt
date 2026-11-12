@@ -1,0 +1,2 @@
+# Optional offline XSD validation. Install during environment setup, never from the preflight itself.
+lxml==6.1.3

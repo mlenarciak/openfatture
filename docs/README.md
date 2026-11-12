@@ -8,6 +8,7 @@ Choose the guide for the work you need to do:
 - **Cloud administrator:** [AWS deployment runbook](../infra/README.md) and [review of the DLT configuration](aws-review.md).
 - **Current service:** [Live deployment and domain status](deployment.md).
 - **Administrator granting application access:** [API and company provisioning](../apps/api/README.md).
+- **Before an SdI test:** [Requirements, go/no-go gates and offline validation](sdi-integration-testing.md). Separates direct invoice traffic, SMTS and provider simulation; includes executable local checks and the tests still required.
 - **Integration developer:** [Product and protocol research](product-research.md) and [official SMTS source manifest](references/sdicoop/sources.json).
 - **Reviewer:** [Validation results and remaining limits](validation.md).
 

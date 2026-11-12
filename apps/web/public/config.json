@@ -1,1 +1,1 @@
-{"apiBaseUrl":"","features":{"multiTenant":true},"auth":{"mode":"demo","domain":"","clientId":"","redirectUri":"","logoutUri":""}}
+{"apiBaseUrl":"","features":{"multiTenant":true,"publicDemo":true},"auth":{"mode":"demo","domain":"","clientId":"","redirectUri":"","logoutUri":""}}

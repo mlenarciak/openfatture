@@ -2,7 +2,15 @@
 
 A TypeScript workspace for Italian invoicing: a TanStack React application, a Fastify API, shared validated contracts and AWS CDK infrastructure. Supports a shared multi-company deployment or one self-hosted company through a server-enforced feature flag.
 
-Production: **https://d2kr49d1pw02a7.cloudfront.net/** (invited Cognito users only). See the [deployment record](docs/deployment.md) for current status and domain setup.
+Application: **https://d2kr49d1pw02a7.cloudfront.net/**. The public demo needs no account; company workspaces use invited Cognito users. See the [deployment record](docs/deployment.md) for deployment status and domain setup.
+
+## Try the product
+
+Choose **Prova la demo** on the home page, or open **[/demo](https://d2kr49d1pw02a7.cloudfront.net/demo)**. Create a sample client, prepare a document, download draft XML and record an incasso. Each browser tab has its own synthetic workspace, stored in `sessionStorage`; it survives reloads until the browser clears that session. **Ripristina demo** restores the examples and **Esci dalla demo** returns to the public page. Browser tabs duplicated by the browser can initially copy session storage, then evolve separately. Use fictional data only.
+
+The public demo runs entirely in the browser. Its data operations never call the production API or fiscal providers. It is separate from both a real company account and an SdI test environment. Open **[/login](https://d2kr49d1pw02a7.cloudfront.net/login)** for company access, first-login instructions and password recovery guidance. A successful login without assigned company membership shows onboarding instructions.
+
+The interface uses shadcn/ui, the supplied neutral/purple theme, square corners and a persistent light/dark preference. Documents and tables retain keyboard navigation and forms use accessible labels and modal focus management.
 
 **Start with the [self-hosting and SdI guide](docs/self-hosting-and-sdi.md)** for plain-language instructions on the Agenzia portals, requesting your own recipient code, using an existing provider and enabling mass services.
 
@@ -21,7 +29,7 @@ Open **http://localhost:5173**. The API listens on **http://127.0.0.1:3001**. Th
 
 Create customers and draft documents, search/filter invoices, prepare them locally, download draft XML, record payments and save mass-service request drafts. The dashboard updates from API records. API errors are displayed; the browser does not substitute sample data for a failed request.
 
-The demo binds the API to loopback and browser demo mode is limited to localhost. Production uses Cognito; there is no public sign-up or demo-auth fallback.
+The local API demo binds to loopback and is limited to localhost. The separate browser-only demo is available at `/demo` when `features.publicDemo` is enabled. Production always uses Cognito for API access; it never falls back to anonymous API authentication.
 
 ## Choose one company or a shared application
 
@@ -49,6 +57,7 @@ The reviewed target is the `dlt` AWS profile in **eu-south-1 (Milan)**. The new 
 ```mermaid
 flowchart LR
   Browser["TanStack web app"] --> CF["CloudFront + private S3"]
+  Browser --> Demo["Public demo: synthetic per-tab browser storage"]
   Browser --> Auth["Cognito login / PKCE"]
   Browser --> API["API Gateway JWT + Fastify Lambda"]
   API --> Membership["DynamoDB memberships and company records"]
@@ -68,6 +77,8 @@ AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:deploy -- -c stage=dev
 
 The deployment outputs the web URL, API URL, user pool and table identifiers. Invite a Cognito user and provision an empty company linked to that user's `sub` using the [API onboarding instructions](apps/api/README.md). Do not seed production with demonstration invoice data.
 
+Enable the public browser demo with `-c publicDemo=true` on **synth, diff and deploy**. It defaults to disabled for self-hosted deployments and does not alter API authorization. Keep the flag on subsequent deployments of the public OpenFatture instance.
+
 ## Commands and layout
 
 | Command | Purpose |
@@ -75,6 +86,8 @@ The deployment outputs the web URL, API URL, user pool and table identifiers. In
 | `npm run dev` | Start API and web app together |
 | `npm run check` | Type-check, run unit/API/infra tests and build |
 | `npm run test:e2e` | Browser workflow tests; install Chromium with `npx playwright install chromium` first |
+| `npm run sdi:check` | Offline official-source checks and integration readiness report; never sends fiscal data |
+| `npm run test:integration` | Offline XML/SMTS tests; Python 3.10+, `scripts/sdi-requirements.txt` and npm dependencies required for full coverage |
 | `npm run infra:synth -- -c stage=dev` | Generate CloudFormation locally |
 | `npm run infra:diff -- -c stage=dev` | Review target-account changes |
 | `npm run provision -- --company-file ./company.json --subject <sub>` | Create initial production company/membership; requires `TABLE_NAME` and AWS credentials |
@@ -93,6 +106,6 @@ The deployment outputs the web URL, API URL, user pool and table identifiers. In
 
 This release provides a working preparation and management application. **It does not submit or receive fiscal invoices, sign SMTS requests or provide compliant conservation.** “Ready” means prepared locally. Exported invoice XML is a draft and is not certified against the current FatturaPA rules. Mass jobs remain `awaiting_configuration`.
 
-The [product research](docs/product-research.md) maps delivered features to the Agenzia and Fatture in Cloud documentation and lists the remaining provider work. The optional server-side Fatture in Cloud adapter only reads authorized company information. Public OAuth onboarding, provider writes and webhook synchronization are not implemented.
+The [SdI integration testing checklist](docs/sdi-integration-testing.md) separates offline tests, provider simulations and accredited-channel tests, and lists the exact blockers for each. The [product research](docs/product-research.md) maps delivered features to the Agenzia and Fatture in Cloud documentation. The optional server-side Fatture in Cloud adapter only reads authorized company information. Public OAuth onboarding, provider writes and webhook synchronization are not implemented.
 
 Production storage currently keeps each company's records in a versioned aggregate with a 350 KB application ceiling. Conditional writes prevent lost updates. Split storage into per-record items before higher-volume operation. Local JSON storage supports one API process. VAT handling is limited to the supported domestic rates; see the API documentation for fiscal scope.

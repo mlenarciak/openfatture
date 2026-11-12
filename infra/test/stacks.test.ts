@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { App, aws_lambda as lambda } from 'aws-cdk-lib';
 import { Template, Match } from 'aws-cdk-lib/assertions';
 import { DataStack } from '../src/data-stack.js';
-import { deploymentFeatures } from '../src/features.js';
+import { deploymentFeatures, publicDemoFeature } from '../src/features.js';
 import { ApplicationStack } from '../src/application-stack.js';
 import { deploymentCustomDomain } from '../src/custom-domain.js';
 import { spaRouterCode } from '../src/spa-router.js';
@@ -18,7 +18,7 @@ test('cloud deployment retains company data, restricts API access and serves onl
   const data = new DataStack(app, 'TestData', { env, terminationProtection: true });
   const webDirectory = mkdtempSync(path.join(os.tmpdir(), 'openfatture-infra-'));
   writeFileSync(path.join(webDirectory, 'index.html'), '<!doctype html><title>Openfatture</title>');
-  const application = new ApplicationStack(app, 'TestApp', { env, data, stage: 'prod', multiTenant: false, selfHostedCompanyId: 'acme', webDirectory, apiCode: lambda.Code.fromInline('exports.handler=async()=>({statusCode:200,body:"ok"})') });
+  const application = new ApplicationStack(app, 'TestApp', { env, data, stage: 'prod', multiTenant: false, selfHostedCompanyId: 'acme', publicDemo: true, webDirectory, apiCode: lambda.Code.fromInline('exports.handler=async()=>({statusCode:200,body:"ok"})') });
   const d = Template.fromStack(data);
   d.hasResource('AWS::DynamoDB::Table', { DeletionPolicy: 'Retain', Properties: Match.objectLike({ DeletionProtectionEnabled: true, PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true } }) });
   d.hasResourceProperties('AWS::Cognito::UserPool', { AdminCreateUserConfig: { AllowAdminCreateUserOnly: true } });
@@ -35,10 +35,15 @@ test('cloud deployment retains company data, restricts API access and serves onl
   const assembly = app.synth();
   const configs = readdirSync(assembly.directory).filter(name => name.startsWith('asset.')).map(name => path.join(assembly.directory, name, 'config.json')).filter(file => existsSync(file));
   assert.ok(configs.some(file => JSON.parse(readFileSync(file, 'utf8')).features?.multiTenant === false), 'deployed runtime configuration carries the same tenant feature flag');
+  assert.ok(configs.some(file => { const config = JSON.parse(readFileSync(file, 'utf8')); return config.features?.publicDemo === true && config.auth.mode === 'cognito'; }), 'public demo leaves production authentication intact');
   assert.equal(assembly.stacks.length, 2); // Full synthesis catches cross-stack cycles.
 });
 
 test('deployment feature flags require explicit valid single-company configuration', () => {
+  assert.equal(publicDemoFeature(undefined), false);
+  assert.equal(publicDemoFeature('true'), true);
+  assert.equal(publicDemoFeature(false), false);
+  assert.throws(() => publicDemoFeature('yes'), /true or false/);
   assert.deepEqual(deploymentFeatures(undefined, undefined), { multiTenant: true, selfHostedCompanyId: undefined });
   assert.deepEqual(deploymentFeatures('false', 'acme'), { multiTenant: false, selfHostedCompanyId: 'acme' });
   assert.throws(() => deploymentFeatures('0', 'acme'), /true or false/);

@@ -1,3 +1,9 @@
+export function publicDemoFeature(context: unknown): boolean {
+  if (context === undefined) return false;
+  if (context !== true && context !== false && context !== 'true' && context !== 'false') throw new Error('publicDemo must be true or false');
+  return context === true || context === 'true';
+}
+
 export function deploymentFeatures(multiTenantContext: unknown, companyContext: unknown) {
   const raw = multiTenantContext ?? true;
   if (raw !== true && raw !== false && raw !== 'true' && raw !== 'false') throw new Error('multiTenant must be true or false');

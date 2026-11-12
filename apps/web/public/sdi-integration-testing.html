@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenFatture: SdI integration test readiness</title>
+<meta name="description" content="Company prerequisites, implementation gaps and safe offline checks before SdI, SMTS or provider integration tests.">
+<style>*{box-sizing:border-box;border-radius:0}html{font-size:18px;scroll-behavior:smooth}body{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--primary:oklch(.491 .27 292.581);--muted:oklch(.97 0 0);--border:oklch(.922 0 0);margin:0;background:var(--background);color:var(--foreground);font-family:system-ui,sans-serif;line-height:1.75}header,main,footer{width:100%;max-width:56rem;min-width:0;margin:auto;padding:1.5rem;overflow-wrap:anywhere}header{border-bottom:1px solid var(--border)}nav{display:flex;gap:.75rem 1.5rem;flex-wrap:wrap;margin-top:.5rem;min-width:0}nav a{max-width:100%}a,a:visited{color:var(--primary);text-underline-offset:3px;overflow-wrap:anywhere}a:focus-visible,table:focus-visible,pre:focus-visible{outline:3px solid var(--primary);outline-offset:4px}h1,h2,h3{color:var(--foreground);line-height:1.3;scroll-margin-top:1rem;overflow-wrap:anywhere}h1{font-size:2rem}h2{margin-top:2.5rem}li{margin:.55rem 0}code{font-size:.9em;overflow-wrap:anywhere;background:var(--muted);color:var(--foreground);padding:.1rem .3rem}table{width:100%;max-width:100%;border-collapse:collapse;display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}th,td{border:1px solid var(--border);padding:.6rem;text-align:left;vertical-align:top;min-width:9rem;overflow-wrap:anywhere}th{background:var(--muted);color:var(--foreground)}pre{max-width:100%;overflow:auto;padding:1rem;background:var(--muted);color:var(--foreground)}pre code{padding:0;overflow-wrap:normal;white-space:pre}.skip{position:absolute;top:-10rem}.skip:focus{top:0;background:var(--background);color:var(--primary);padding:.5rem;z-index:1}footer{border-top:1px solid var(--border);font-size:.9rem}@media(max-width:600px){header,main,footer{padding:1rem}h1{font-size:1.7rem}nav{gap:.5rem 1rem}th,td{padding:.5rem}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{nav,.skip{display:none}body{background:white;color:black}a,a:visited{color:black}header,main,footer{max-width:none}table{display:table;overflow:visible}th,td{min-width:0}pre{white-space:pre-wrap;overflow-wrap:anywhere}}</style></head><body>
+<a class="skip" href="#content">Skip to content</a>
+<header><strong>openfatture / Integration readiness</strong><nav aria-label="Guide navigation"><a href="/">Back to app</a><a href="/guida.html" lang="it">Guida in italiano</a><a href="/self-hosting-and-sdi.html">Company setup guide</a><a href="/sdi-integration-testing.html" aria-current="page">Before SdI testing</a></nav></header>
+<main id="content" tabindex="-1"><h1 id="before-testing-the-sdi-integration">Before testing the SdI
+integration</h1>
+<p><strong>Decision on 12 November 2026: GO for offline checks; NO-GO
+for connecting this release to SdI, SMTS or a Fatture in Cloud send
+workflow.</strong> The public demonstration and successful AWS
+deployment test the application. They do not establish channel
+accreditation, taxpayer authorization or fiscal correctness.</p>
+<p>This guide tells the company administrator what to prepare and gives
+developers a test plan. Nobody needs to share SPID credentials, private
+keys, signing PINs or provider tokens in a support conversation. Keep
+those in the operator's approved credential system. Portal steps are
+based on current public documentation; private portal screens and this
+company's accreditation were not inspected.</p>
+<h2 id="choose-the-integration-you-intend-to-test">Choose the
+integration you intend to test</h2>
+<table tabindex="0">
+<thead>
+<tr class="header">
+<th>Route</th>
+<th>What happens</th>
+<th>What OpenFatture currently implements</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Direct SdICoop invoice transmission</td>
+<td>Your accredited channel sends invoice files to SdI and receives
+asynchronous notifications</td>
+<td>Draft XML export; no SOAP sender, certificates, callbacks or receipt
+processing</td>
+</tr>
+<tr class="even">
+<td>Direct SdICoop invoice reception</td>
+<td>SdI calls your accredited receiving endpoint with invoice files and
+metadata</td>
+<td>No inbound invoice endpoint or import pipeline</td>
+</tr>
+<tr class="odd">
+<td>SMTS mass services over SdICoop</td>
+<td>An enabled provider submits signed requests, polls results and
+downloads archives; amended bollo list B is a separate transmission
+flow</td>
+<td>Local request records with <code>awaiting_configuration</code>; no
+signed request or remote operation</td>
+</tr>
+<tr class="even">
+<td>Fatture in Cloud as provider</td>
+<td>Your connector creates/maps provider documents, verifies them and
+synchronizes results</td>
+<td>Optional administrator-only company listing, pinned to one local
+tenant; no document writes or send simulation</td>
+</tr>
+</tbody>
+</table>
+<p>A normal invoice send is <strong>not</strong>
+<code>inoltroRichiesta</code>. That operation belongs to SMTS. Likewise,
+<code>trasmissioneElenchi</code> concerns amended stamp-duty lists, not
+transmission of ordinary invoices. SdI quadratura/reinoltro is another
+set of services. The <a
+href="https://www.agenziaentrate.gov.it/portale/servizi-massivi-sdicoop">SMTS
+documentation</a> and <a
+href="https://www.fatturapa.gov.it/it/norme-e-regole/DocumentazioneSDI/">SdICoop
+manuals</a> describe separate contracts.</p>
+<h2 id="what-the-company-must-do">What the company must do</h2>
+<h3 id="if-using-fatture-in-cloud-or-another-accredited-provider">If
+using Fatture in Cloud or another accredited provider</h3>
+<ol type="1">
+<li>Choose the actual provider and confirm its company account, API
+permissions, plan and supported test workflow. A provider's accredited
+channel does not give OpenFatture an API connector automatically.</li>
+<li>Identify the legal taxpayer, its Partita IVA and the person
+authorized to grant the provider access. Confirm that the provider
+company ID maps to the same taxpayer; it is different from an
+OpenFatture company ID or a Cognito user ID.</li>
+<li>Authorize the integration with the required provider scopes and
+company permissions. A server-wide token must not become a shared
+credential for unrelated tenants.</li>
+<li>Agree a non-fiscal test boundary with the provider. Fatture in Cloud
+documents <code>options.dry_run=true</code> for send simulation; its
+trial is a standard account, and sending requires a paid plan. Do not
+treat omitted or false <code>dry_run</code> as a harmless test. <a
+href="https://developers.fattureincloud.it/docs/guides/e-invoice-management/">Provider
+test options</a>, <a
+href="https://developers.fattureincloud.it/docs/developer-account/">account
+and plan rules</a>.</li>
+<li>For receiving invoices, obtain the provider's seven-character code
+and register it for the taxpayer in Fatture e Corrispettivi. Coordinate
+the cutover and reception test. Registration changes a real delivery
+preference; do not change it just to run an offline test.</li>
+</ol>
+<p>Fatture in Cloud cannot submit OpenFatture's exported XML as-is. A
+future connector must create the provider document through supported
+APIs and retain the provider's identifiers before verification or
+simulation. Historical XML import is not a sending route. <a
+href="https://developers.fattureincloud.it/docs/guides/externally-generated-xml/">External
+XML rules</a>.</p>
+<h3 id="if-operating-a-direct-sdi-channel">If operating a direct SdI
+channel</h3>
+<ol type="1">
+<li>Confirm the company's Entratel/Fisconline registration and the
+authorized Gestore/Incaricato. In the Agenzia reserved area, the Gestore
+can enable <strong>Accreditamento e gestione dei canali
+trasmissivi</strong> under <strong>Il tuo Profilo → Incarichi → Gestisci
+incarichi come gestore → Gestisci Servizi</strong>. See <a
+href="https://www.fatturapa.gov.it/export/documenti/guide/Guida-SA_v2.0.pdf">SA
+guide v2.0</a>.</li>
+<li>Select the correct taxpayer in <a
+href="https://accreditamento.fatturapa.gov.it/">Sistema di
+Accreditamento</a>. Appoint the agreement contact and technical
+operators. Record whether the WS channel is for sending, receiving or
+both.</li>
+<li>Have IT implement the interfaces, register callback endpoints and
+obtain/manage channel certificates through the current CSR workflow.
+Agree exact test endpoints and trust material with the accreditation
+system. Never infer a test hostname from a production hostname.</li>
+<li>Run the prescribed interoperability cases. The official process may
+use six-character PA test codes and PA notification cases even for an
+eventual B2B channel. These are channel tests, not proof that every
+fiscal case in the app is correct.</li>
+<li>After successful tests, review/accept the service agreement and
+request production activation. Request a seven-character B2B recipient
+code for an activated receiving channel, then register the taxpayer's
+receiving address separately. A sending-only WS channel cannot obtain a
+receiving code; SFTP accreditation is bidirectional. <a
+href="https://www.fatturapa.gov.it/it/SistemaAccreditamento/processo-per-nuovo-accreditamento/">Current
+accreditation process</a>.</li>
+</ol>
+<p>For SMTS, additionally verify the intended services and enable the
+provider for each taxpayer under <strong>Fatture e Corrispettivi →
+Consultazione → Censimento canali per forniture massive</strong>. Obtain
+the relevant intermediary delegation where needed. Arrange qualified
+signing by the taxpayer or delegated intermediary. An application
+membership, channel certificate and portal delegation establish
+different permissions.</p>
+<h2 id="credentials-and-endpoints-it-must-distinguish">Credentials and
+endpoints IT must distinguish</h2>
+<table tabindex="0">
+<thead>
+<tr class="header">
+<th>Item</th>
+<th>Purpose</th>
+<th>Required evidence before a connected test</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Cognito login and app membership</td>
+<td>Access to this company's OpenFatture records</td>
+<td>Correct user subject, company and role; cross-company requests
+denied</td>
+</tr>
+<tr class="even">
+<td>FIC OAuth grant/token</td>
+<td>Access to provider resources</td>
+<td>Explicit local company ↔︎ provider company ↔︎ VAT mapping, valid
+scopes, lifecycle and revocation</td>
+</tr>
+<tr class="odd">
+<td>SdICoop client identity and trust chain</td>
+<td>Certificate-authenticated transport to SdI/SMTS</td>
+<td>Test activation, certificate/key match, expiry/revocation/renewal,
+approved endpoint and TLS settings</td>
+</tr>
+<tr class="even">
+<td>Public receiving/callback service</td>
+<td>Allows SdI to deliver files and notifications</td>
+<td>Registered reachable HTTPS SOAP endpoint; validates the authorized
+peer and persists before acknowledging</td>
+</tr>
+<tr class="odd">
+<td>SMTS qualified signature</td>
+<td>Signs the request in the capacity of taxpayer or delegate</td>
+<td>Correct signer, qualified certificate and delegation, accepted
+CAdES/XAdES profile; independent of TLS identity</td>
+</tr>
+<tr class="even">
+<td>Public web TLS certificate</td>
+<td>Protects the browser site</td>
+<td>Valid DNS and server certificate; this alone is not channel
+accreditation or request signing</td>
+</tr>
+</tbody>
+</table>
+<p>For invoice transmission, <code>SdIRiceviFile</code> is exposed by
+SdI; the transmitter exposes <code>TrasmissioneFatture</code> for
+messages. For receiving, the recipient exposes
+<code>RicezioneFatture</code>; <code>SdIRiceviNotifica</code> handles
+the PA-specific response path. Current channel rules specify TLS 1.2 and
+SOAP attachments/MTOM with certificate-based authentication. <a
+href="https://www.fatturapa.gov.it/export/documenti/ws/trasmissione/v3.x/Istruzioni-per-il-servizio-SDICoop-Trasmissione-versione3.3.pdf">Transmission
+manual v3.3</a>, <a
+href="https://www.fatturapa.gov.it/export/documenti/ws/ricezione/v3.x/Istruzioni-per-il-servizio-SDICoop-Ricezione-versione3.3.pdf">reception
+manual v3.3</a>, <a
+href="https://www.fatturapa.gov.it/export/documenti/Specifiche-tecniche-relative-al-Sistema-di-Interscambio-versione-1.8.4.pdf">channel
+rules v1.8.4</a>.</p>
+<p>The deployed <code>/api/*</code> routes require a Cognito token and
+accept business JSON; they are not these SOAP endpoints. A future
+callback path needs its own verified transport/provider authentication,
+payload handling and tenant resolution. Do not disable authentication
+across the business API to make a callback reachable. Do not trust an
+inbound <code>X-Company-Id</code> header to route fiscal data.</p>
+<h2 id="implementation-blockers-to-close">Implementation blockers to
+close</h2>
+<p>These findings come from the current <a
+href="https://github.com/mlenarciak/openfatture/blob/main/apps/api/src/app.ts">API</a>,
+<a
+href="https://github.com/mlenarciak/openfatture/blob/main/apps/api/src/xml.ts">XML
+exporter</a>, <a
+href="https://github.com/mlenarciak/openfatture/blob/main/packages/domain/src/index.ts">domain
+contracts</a> and infrastructure. They are implementation findings, not
+statements that the Agenzia has rejected a test.</p>
+<ul>
+<li><strong>Not complete:</strong> <strong>Define and implement the
+selected adapter.</strong> There is no invoice SOAP transport, receiving
+service, notification processor, SMTS worker or FIC document connector.
+The infrastructure's SQS/S3 resources are reserved foundations with no
+fiscal consumer.</li>
+<li><strong>Not complete:</strong> <strong>Freeze the fiscal
+document.</strong> Keep immutable seller/buyer data, numbering/series,
+document version, approved XML bytes, hash, transmission filename and
+unique sending progressive. The current export downloads
+<code>DRAFT-&lt;id&gt;.xml</code>; that filename is intentionally not a
+transmission contract. Current draft numbering and <code>/issue</code>
+do not establish legal issuance.</li>
+<li><strong>Not complete:</strong> <strong>Enforce fiscal validation
+before enqueueing.</strong> The exporter supports ordinary domestic
+<code>FPR12</code>, <code>TD01</code> and <code>TD04</code>; quotes
+correctly fail export. Current field limits are application limits, not
+all XSD limits: for example, business names allow 160 characters while
+the invoice schema's denomination is shorter. Address limits, XML
+control characters, taxpayer validity, routing, dates and totals need
+validation against the selected profile and business rules.</li>
+<li><strong>Not complete:</strong> <strong>Model supported tax cases
+explicitly.</strong> Only positive taxable VAT rates 4/5/10/22 are
+modeled. No zero-rate/Natura, reverse charge, withholding, pension
+funds, split payment, foreign counterparties, PA-specific fields or
+simplified invoices are implemented. Do not silently approximate these
+cases. Ordinary private-invoice signing rules differ from PA and SMTS:
+qualified signing of every SMTS request is not a reason to assume every
+B2B invoice must be signed. <a
+href="https://www.agenziaentrate.gov.it/portale/documents/d/guest/allegato-a-specifiche-tecniche-vers-1-9-1">B2B
+rules v1.9.1</a>.</li>
+<li><strong>Not complete:</strong> <strong>Separate business, transport
+and payment states.</strong> <code>/issue</code> changes
+<code>draft</code> to local <code>ready</code>. <code>paid</code> is a
+local payment result. Neither proves SdI acceptance or delivery. Add
+transmission attempt/unknown result, accepted-by-transport, rejected,
+delivered, unavailable-for-delivery and applicable PA events separately;
+preserve raw receipts and their provenance.</li>
+<li><strong>Not complete:</strong> <strong>Make submission recovery
+safe.</strong> Atomically persist the immutable snapshot and outbox
+intent; assign tenant-scoped idempotency and correlation identifiers;
+reconcile an ambiguous timeout before retrying a send. Payment
+idempotency and aggregate optimistic concurrency already exist but do
+not deduplicate fiscal submissions or callbacks. Current company
+aggregates have a 350 KB ceiling and are unsuitable for bulk
+invoice/archive storage.</li>
+<li><strong>Not complete:</strong> <strong>Bind legal authority to each
+operation.</strong> Map local company, taxpayer VAT/CF,
+provider/channel, receiving code and signer/delegation evidence. Scope
+all jobs, archive IDs, webhook subscriptions and receipt lookups to that
+mapping. Test expired/revoked/mismatched authorization and quarantine
+unresolvable inbound documents.</li>
+<li><strong>Not complete:</strong> <strong>Implement trusted ingestion
+and reconciliation.</strong> Verify the channel peer or provider
+notification token, safely parse XML/attachments, enforce size limits,
+deduplicate events and handle late/out-of-order receipts. FIC uses its
+own signed notification token, not a Cognito access token; subscription
+verification, expiry and re-fetch of authoritative resource state also
+require implementation. <a
+href="https://developers.fattureincloud.it/docs/webhooks/notifications/">FIC
+notifications</a>.</li>
+<li><strong>Not complete:</strong> <strong>Complete SMTS policy and
+signing.</strong> Current jobs contain only type/date fields; there is
+no inner payload, signed wrapper, service-specific options, qualified
+signer, provider request ID or result list. The generic dates cannot
+select emission, reception or v1.5 SdI acceptance-date semantics.
+<code>receipt_download</code> currently denotes a local corrispettivi
+request, not SdI delivery receipts. Stamp-duty downloads and modified
+list-B submission need separate contracts.</li>
+<li><strong>Not complete:</strong> <strong>Agree conservation and
+operations.</strong> Define the preservation service, responsibility and
+evidence, access/audit retention, recovery and escalation. S3 versioning
+and database backups do not implement compliant conservation.</li>
+</ul>
+<h2 id="test-phases-and-acceptance-evidence">Test phases and acceptance
+evidence</h2>
+<p>Existing tests provide an application baseline. Rows marked
+<strong>missing</strong> describe tests to build before connecting the
+adapter; they have not passed merely because they appear here.</p>
+<table tabindex="0">
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>Test and expected result</th>
+<th>Current evidence / gate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0 · offline provenance</td>
+<td>Bundled sources match SHA256/length; WSDL operations match the
+selected SMTS service</td>
+<td><code>scripts/sdi-preflight.py</code>; executable now</td>
+</tr>
+<tr class="even">
+<td>0 · XML structure</td>
+<td>Compile exact invoice/SMTS schemas without network; validate
+synthetic invoice and inner request; reject unsafe XML, wrong namespaces
+and broken payloads</td>
+<td><code>tests/integration/test_sdi_preflight.py</code>; structural
+checks only</td>
+</tr>
+<tr class="odd">
+<td>0 · application</td>
+<td>Draft → local readiness → payment; quote XML denied; errors retain
+draft marker; company/role isolation; idempotent payment replay</td>
+<td><code>apps/api/test/api.test.ts</code>,
+<code>apps/api/test/store.test.ts</code>,
+<code>packages/domain/test/calculations.test.ts</code></td>
+</tr>
+<tr class="even">
+<td>0 · fiscal edge cases</td>
+<td>TD01/TD04 with mixed VAT, quantity rounding, long/illegal fields,
+routing codes, fiscal numbering and totals; unsupported tax profiles
+fail before sending</td>
+<td>Partial arithmetic/application coverage; complete business-rule
+suite <strong>missing</strong></td>
+</tr>
+<tr class="odd">
+<td>1 · mocked adapter</td>
+<td>Correct SOAP/MTOM or provider JSON; response correlation; 401/403,
+429/Retry-After, SOAP fault, timeouts and duplicate/out-of-order
+notifications</td>
+<td>Adapter and fixtures <strong>missing</strong>; no external
+credentials needed to build them</td>
+</tr>
+<tr class="even">
+<td>1 · recovery/isolation</td>
+<td>Crash after intent/before send/after remote acceptance; replay
+delivers one logical submission; malicious/foreign callback cannot
+modify another taxpayer</td>
+<td>Fiscal outbox, inbox and reconciliation tests
+<strong>missing</strong></td>
+</tr>
+<tr class="odd">
+<td>2 · channel/test environment</td>
+<td>Prove approved test endpoint, certificates/peer trust, network
+reachability and registered callback; complete prescribed
+interoperability cases and inspect captured receipts</td>
+<td><strong>NO-GO now</strong>; direct-channel implementation and
+company evidence required</td>
+</tr>
+<tr class="even">
+<td>2 · provider simulation</td>
+<td>Map FIC company/document, create/verify through provider APIs, then
+explicitly use <code>options.dry_run=true</code>; record IDs without
+fiscal delivery</td>
+<td><strong>NO-GO now</strong>; document adapter and approved provider
+account needed</td>
+</tr>
+<tr class="odd">
+<td>2 · SMTS</td>
+<td>Verify signed wrapper plus inner input, authorized taxpayer,
+provider ID, asynchronous status, empty/error/multi-archive result and
+informed viewing action</td>
+<td><strong>NO-GO now</strong>; confirm available test facility and
+dataset with the accredited provider/Agenzia; a normal SMTS production
+URL is not a sandbox</td>
+</tr>
+<tr class="even">
+<td>3 · controlled live pilot</td>
+<td>Separately approved real taxpayer/document, completed prior phases,
+monitored receipts and reconciliation, conservation handoff and
+contingency owner</td>
+<td><strong>NO-GO now</strong>; channel test completion does not itself
+authorize a live fiscal invoice</td>
+</tr>
+</tbody>
+</table>
+<p>A test record should contain the environment, source versions, case
+ID, code revision, masked taxpayer reference, expected/actual state,
+immutable payload/receipt hashes, correlation IDs, time and reviewer.
+Store payloads and certificates in the appropriate protected system, not
+Git or public screenshots. Record whether a result was simulated,
+channel-test traffic, or fiscal production traffic.</p>
+<h3 id="smts-specific-tests-and-limits">SMTS-specific tests and
+limits</h3>
+<p>Test <code>inoltroRichiesta → esitoRichiesta → scaricoFile</code>,
+including <code>ST00</code> (not available to that provider),
+<code>ST01</code> (processing), <code>ST02</code> (rejected) and
+<code>ST03</code> (processed with result list). Test the v1.5
+<code>FattureDataAcc/DataAccoglienza</code> branch as well as
+emission/reception dates and the separate list-B transmission/result
+path. Enforce the published request/poll/download limits and archive
+deadlines in policy code; the app's maximum 90-day draft window is not
+the official three-calendar-month rule. Exercise wrong
+signer/delegation, duplicate request, provider not enabled, no results,
+multiple archives, corrupt archive, path traversal and excessive
+decompression.</p>
+<p><strong>Before the first attempt to download an invoice
+archive</strong>, present and record the authorized viewing decision:
+the official service records presa visione for documents in that archive
+on the first download attempt. A failed local save must not cause the
+app to claim that no viewing occurred. Persist archive
+identities/checksums and restart safely. <a
+href="https://www.agenziaentrate.gov.it/portale/documents/20143/5748669/Servizi_Massivi_Specifiche_Tecniche_v1.5.pdf/f1734d20-d179-eb0a-7a2d-2ea6a710f1f6?t=1773644778533">SMTS
+technical instructions v1.5</a>.</p>
+<h2 id="run-the-safe-checks-now">Run the safe checks now</h2>
+<p>From the repository root, after <code>npm ci</code>, using Python
+3.10+:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--json</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-B</span> <span class="at">-m</span> unittest discover <span class="at">-s</span> tests/integration <span class="at">-p</span> <span class="st">&#39;test_sdi_preflight.py&#39;</span> <span class="at">-v</span></span></code></pre></div>
+<p>The baseline uses Python's standard library for hashes and WSDL
+inspection. <strong>Actual XSD compilation/validation additionally
+requires <code>lxml</code>.</strong> Use your approved Python
+environment and
+<code>python3 -m pip install -r scripts/sdi-requirements.txt</code> to
+install the pinned validator during setup if absent; the checker never
+installs or downloads anything. Without it, XSD checks are explicitly
+<code>not_run</code>, not passes. Run structural checks on the included
+fictional fixtures:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--xml</span> tests/integration/fixtures/draft-invoice-synthetic.xml <span class="at">--schema</span> invoice</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--xml</span> tests/integration/fixtures/smts-input-valid.xml <span class="at">--schema</span> smts-input</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/sdi-preflight.py <span class="at">--require-sandbox-ready</span> <span class="at">--json</span></span></code></pre></div>
+<p>The final command deliberately exits <strong>2</strong> while the
+reviewed release lacks integration readiness. Other exit codes:
+<strong>0</strong> means the requested offline checks passed;
+<strong>1</strong> means an offline check failed. <code>--xml</code> and
+<code>--schema</code> must be supplied together. The available profiles
+distinguish an invoice, SMTS inner input and SMTS outer envelope.
+Validate the inner XML separately before embedding it: checking a
+wrapper does not validate the base64-decoded inner payload. An
+envelope's schema permits an optional XML signature; this tool does not
+verify a signature or waive the service's qualified-signature
+requirement.</p>
+<p>No command above calls AWS, Fatture in Cloud or the Agenzia, reads
+credentials, signs a request or sends fiscal data. The optional
+validator rejects DTD/entity-bearing input, limits payload size,
+disables network access and resolves schema dependencies only from
+checksum-verified local files. The static invoice is a frozen synthetic
+example. The integration suite also invokes
+<code>scripts/sdi-export-fixture.ts</code> through the already-installed
+local TypeScript runner, exercising the actual exporter for TD01, TD04
+and mixed-rate/fractional-quantity cases. It confirms that an overlong
+denomination fails the official schema and quotes are refused. These
+cases are not proof that all possible exports or fiscal business rules
+are valid.</p>
+<h2 id="source-versions-and-review-limits">Source versions and review
+limits</h2>
+<p>Reviewed on <strong>12 November 2026</strong>. Agenzia pages that
+returned 403 in the research browser were retrieved directly over HTTPS.
+Published versions were read from document contents/current listings,
+not inferred from old URL labels. This is a requirements review; no
+channel, signer, delegation or provider credential was supplied or
+exercised.</p>
+<table tabindex="0">
+<thead>
+<tr class="header">
+<th>Contract</th>
+<th>Current source reviewed</th>
+<th>Repository evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ordinary invoice XML</td>
+<td>XSD <strong>1.2.3</strong>, format specification
+<strong>1.4</strong> on <a
+href="https://www.fatturapa.gov.it/it/norme-e-regole/documentazione-fattura-elettronica/formato-fatturapa/">FatturaPA
+format page</a></td>
+<td><code>docs/references/fatturapa/Schema_VFPR12_v1.2.3.xsd</code> and
+checksum manifest</td>
+</tr>
+<tr class="even">
+<td>B2B process/business rules</td>
+<td><a
+href="https://www.agenziaentrate.gov.it/portale/documents/d/guest/allegato-a-specifiche-tecniche-vers-1-9-1">Allegato
+A <strong>1.9.1</strong>, 31 March 2026</a></td>
+<td>Reviewed requirements; no implemented business-rule validator</td>
+</tr>
+<tr class="odd">
+<td>SdI channel rules</td>
+<td><strong>1.8.4</strong>, current listing valid from <strong>15 May
+2026</strong>, and controls <strong>2.0</strong></td>
+<td><a
+href="https://www.fatturapa.gov.it/it/norme-e-regole/DocumentazioneSDI/">Official
+SdI listing</a>; channel artifacts are not yet a complete vendored
+integration bundle</td>
+</tr>
+<tr class="even">
+<td>Invoice WS interfaces</td>
+<td>Transmission/reception manuals <strong>3.3</strong>; separately
+versioned WSDL/XSD</td>
+<td>Official listing above; must pin the chosen
+sender/receiver/notification contracts before adapter work</td>
+</tr>
+<tr class="odd">
+<td>Accreditation</td>
+<td><a
+href="https://www.fatturapa.gov.it/export/documenti/guide/Guida-SA_v2.0.pdf">SA
+guide <strong>2.0</strong></a> and current portal process</td>
+<td>Company/IT steps above</td>
+</tr>
+<tr class="even">
+<td>SMTS</td>
+<td>Technical/format documents and inner input <strong>1.5</strong>,
+published <strong>16 March 2026</strong>; wrapper/types/WSDL
+<strong>1.0</strong></td>
+<td><code>docs/references/sdicoop/sources.json</code>;
+response/archive-specific schemas still need pinning for result
+ingestion</td>
+</tr>
+<tr class="odd">
+<td>XML signature dependency</td>
+<td>W3C XML-signature core schema, original bytes and included
+license</td>
+<td><code>docs/references/fatturapa/xmldsig-core-schema.xsd</code>,
+manifest and license notice</td>
+</tr>
+<tr class="even">
+<td>Fatture in Cloud</td>
+<td>Current <a
+href="https://developers.fattureincloud.it/docs/guides/e-invoice-management/">e-invoice
+guide</a>, <a
+href="https://developers.fattureincloud.it/docs/basics/company-scoped-methods/">company
+scope</a>, <a
+href="https://developers.fattureincloud.it/docs/webhooks/notifications/">notifications</a>
+and <a
+href="https://developers.fattureincloud.it/docs/basics/limits-and-quotas/">quotas</a></td>
+<td>Read-only company-list adapter; remaining operations are
+requirements</td>
+</tr>
+</tbody>
+</table>
+<p>The namespace ending <code>/fatture/v1.2</code>, the XSD revision
+<code>1.2.3</code>, the B2B specification <code>1.9.1</code>, the
+channel specification <code>1.8.4</code> and SMTS <code>1.5</code> are
+different version identifiers. Keep them distinct in test reports.
+Update the source pins, tests and this decision when the selected
+adapter and company evidence are available.</p>
+</main>
+<footer>Reviewed 12 November 2026. Offline validation does not establish fiscal correctness, channel accreditation, or permission to send. <a href="https://github.com/mlenarciak/openfatture/blob/main/docs/sdi-integration-testing.md">Source document</a>.</footer>
+</body></html>

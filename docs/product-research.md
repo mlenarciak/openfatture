@@ -1,5 +1,7 @@
 # Product and integration review
 
+For the current test decision, company prerequisites and executable offline checks, read [Before testing the SdI integration](sdi-integration-testing.md).
+
 Reviewed 12 November 2026. OpenFatture is an independent implementation; Fatture in Cloud is a feature reference and optional provider, not an affiliation.
 
 ## Agenzia delle Entrate: SMTS v1.5
@@ -28,12 +30,12 @@ The [scadenzario guide](https://help.fattureincloud.it/help/articolo/145-scadenz
 
 | Area | This implementation | Next production milestone |
 | --- | --- | --- |
-| Workspace | Company-scoped dashboard, customer registry, search and filters | Company onboarding, membership administration and roles |
+| Workspace | Company-scoped dashboard, customer registry, search/filter and CLI provisioning/membership roles | Onboarding experience, authorization audit and provider mapping |
 | Documents | Draft creation, fixed-point totals, local preparation, draft XML export | Full current FatturaPA XSD/business validation and provider submission |
 | Payments | Due dates, partial/full payment recording, dashboard updates | Bank reconciliation, reminders and payment-provider integration |
 | SMTS | Persistent request drafts with truthful connector status | Qualified signing, consent/delegation evidence, SOAP transport, polling, archive verification |
 | Fatture in Cloud | Server-side adapter foundation and readiness | Per-company OAuth, encrypted token lifecycle, mapping, webhooks and reconciliation |
-| AWS | CDK deployment, authenticated API, durable data, object/queue foundations | Live deployment, tenant provisioning and operational acceptance |
+| AWS | Deployed CDK application, authenticated API, durable data, object/queue foundations | Authenticated operational acceptance, fiscal adapter and recovery drills |
 | Conservation | Explicitly unconfigured | Contracted compliant conservation service; S3 retention alone is insufficient |
 
 Tax cases such as zero-rate VAT/natura, withholding, pension contributions, split payment, reverse charge, foreign counterparties and public-administration invoicing require dedicated modeling and validation before use. The initial UI supports a deliberately bounded Italian domestic workflow.

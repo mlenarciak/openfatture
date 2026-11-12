@@ -12,6 +12,8 @@ interface ApplicationStackProps extends StackProps {
   data: DataStack;
   stage: 'dev' | 'prod';
   multiTenant?: boolean;
+  /** Anonymous, per-tab browser sandbox. Never enables anonymous API access. */
+  publicDemo?: boolean;
   selfHostedCompanyId?: string;
   customDomain?: CustomDomain;
   /** Unit tests supply tiny local assets; production always bundles the real handler. */
@@ -126,7 +128,7 @@ export class ApplicationStack extends Stack {
     new cloudwatch.Alarm(this, 'HttpServerErrors', { metric: api.metricServerError(), threshold: 5, evaluationPeriods: 1, treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING });
     new cloudwatch.Alarm(this, 'ApiErrors', { metric: apiFunction.metricErrors(), threshold: 5, evaluationPeriods: 1, treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING });
     new cloudwatch.Alarm(this, 'OutboxDeadLetters', { metric: data.outboxDlq.metricApproximateNumberOfMessagesVisible(), threshold: 1, evaluationPeriods: 1, treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING });
-    const config = { features: { multiTenant }, apiBaseUrl: api.apiEndpoint, auth: { mode: 'cognito', domain: domain.baseUrl(), clientId: client.userPoolClientId, redirectUri: `${webUrl}/auth/callback`, logoutUri: `${webUrl}/` } };
+    const config = { features: { multiTenant, publicDemo: props.publicDemo ?? false }, apiBaseUrl: api.apiEndpoint, auth: { mode: 'cognito', domain: domain.baseUrl(), clientId: client.userPoolClientId, redirectUri: `${webUrl}/auth/callback`, logoutUri: `${webUrl}/` } };
     new deployment.BucketDeployment(this, 'WebDeployment', {
       sources: [deployment.Source.asset(webDirectory), deployment.Source.jsonData('config.json', config)],
       destinationBucket: web, distribution, distributionPaths: ['/*'], prune: true,
