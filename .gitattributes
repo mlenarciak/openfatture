@@ -1,4 +1,4 @@
-# Keep the official protocol files byte-for-byte identical to sources.json checksums.
-docs/references/sdicoop/*.xsd -text whitespace=-trailing-space,-space-before-tab
-docs/references/sdicoop/*.wsdl -text whitespace=-trailing-space,-space-before-tab
-docs/references/fatturapa/*.xsd -text whitespace=-trailing-space,-space-before-tab
+# Keep the official, checksum-pinned SdI contracts byte-for-byte, including CRLF
+# and upstream whitespace. Application source retains normal whitespace checks.
+apps/sdi-gateway/references/*.wsdl -text -whitespace
+apps/sdi-gateway/references/*.xsd -text -whitespace
