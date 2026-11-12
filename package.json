@@ -1,0 +1,36 @@
+{
+  "name": "openfatture",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Italian invoicing workspace with TanStack, a TypeScript API, and AWS infrastructure",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "infra"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c green,cyan \"npm run dev -w @openfatture/api\" \"npm run dev -w @openfatture/web\"",
+    "build": "npm run build -w @openfatture/api && npm run build -w @openfatture/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "check": "npm run typecheck && npm test && npm run build",
+    "test:e2e": "playwright test",
+    "infra:synth": "npm run synth -w @openfatture/infra --",
+    "infra:diff": "npm run diff -w @openfatture/infra --",
+    "infra:deploy": "npm run deploy -w @openfatture/infra --",
+    "provision": "npm run provision -w @openfatture/api --",
+    "membership": "npm run membership -w @openfatture/api --"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^22.0.0",
+    "concurrently": "^9.2.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@openfatture/infra",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "synth": "cdk synth '*' --strict",
+    "diff": "cdk diff '*'",
+    "deploy": "cdk deploy '*' --outputs-file cdk-outputs.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.275.0",
+    "constructs": "^10.4.3"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.1109.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0"
+  }
+}

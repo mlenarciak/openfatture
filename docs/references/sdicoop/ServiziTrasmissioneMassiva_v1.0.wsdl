@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions 
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+	xmlns:soapbind="http://schemas.xmlsoap.org/wsdl/soap/"
+	xmlns:types="http://ivaservizi.agenziaentrate.gov.it/docs/wsdl/ServiziMassivi/v1.0/types"
+	xmlns:tns="http://ivaservizi.agenziaentrate.gov.it/docs/wsdl/ServiziMassivi/v1.0"
+	targetNamespace="http://ivaservizi.agenziaentrate.gov.it/docs/wsdl/ServiziMassivi/v1.0">
+
+	<!-- TIPI -->
+	<wsdl:types>
+		<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+			<xsd:import namespace="http://ivaservizi.agenziaentrate.gov.it/docs/wsdl/ServiziMassivi/v1.0/types" schemaLocation="ServiziMassiviTypes_v1.0.xsd"/>
+		</xsd:schema>
+	</wsdl:types>
+
+	<!-- MESSAGGI -->
+	
+	<!-- TRASMISSIONE ELENCHI -->
+	<wsdl:message name="trasmissioneElenchiInput">
+		<wsdl:part name="parametersIn" element="types:TrasmissioneElenchiRequest" />
+	</wsdl:message>
+	<wsdl:message name="trasmissioneElenchiOutput">
+		<wsdl:part name="parametersOut" element="types:TrasmissioneElenchiResponse" />
+	</wsdl:message>
+	<wsdl:message name="esitoTrasmissioneInput">
+		<wsdl:part name="parametersIn" element="types:EsitoTrasmissioneRequest" />
+	</wsdl:message>
+	<wsdl:message name="esitoTrasmissioneOutput">
+		<wsdl:part name="parametersOut" element="types:EsitoTrasmissioneResponse" />
+	</wsdl:message>
+	
+	<!-- PORT TYPE -->
+	<wsdl:portType name="ServiziTrasmissioneMassiva">
+		<wsdl:operation name="trasmissioneElenchi">
+			<wsdl:input message="tns:trasmissioneElenchiInput" />
+			<wsdl:output message="tns:trasmissioneElenchiOutput" />
+		</wsdl:operation>
+		<wsdl:operation name="esitoTrasmissione">
+			<wsdl:input message="tns:esitoTrasmissioneInput" />
+			<wsdl:output message="tns:esitoTrasmissioneOutput" />
+		</wsdl:operation>
+	</wsdl:portType>
+
+	<!-- PORT BINDING -->
+	<wsdl:binding name="ServiziTrasmissioneMassiva_binding" type="tns:ServiziTrasmissioneMassiva">
+		<soapbind:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+		<wsdl:operation name="trasmissioneElenchi">
+			<soapbind:operation soapAction="trasmissioneElenchi"/>
+			<wsdl:input>
+				<soapbind:body use="literal" />
+			</wsdl:input>
+			<wsdl:output>
+				<soapbind:body use="literal" />
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="esitoTrasmissione">
+			<soapbind:operation soapAction="esitoTrasmissione" />
+			<wsdl:input>
+				<soapbind:body use="literal" />
+			</wsdl:input>
+			<wsdl:output>
+				<soapbind:body use="literal" />
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	
+	<!-- SERVICE -->
+	<wsdl:service name="ServiziTrasmissioneMassivaService">
+		<wsdl:port name="ServiziTrasmissioneMassiva_port" binding="tns:ServiziTrasmissioneMassiva_binding">
+      		<soapbind:address location="https://servizi.fatturapa.it/sm-trasmissione-file"/>
+		</wsdl:port>
+	</wsdl:service>				
+</wsdl:definitions>

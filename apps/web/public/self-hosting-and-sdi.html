@@ -1,0 +1,153 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenFatture: self-hosting and SdI</title><style>*{box-sizing:border-box}html{font-size:18px;scroll-behavior:smooth}body{margin:0;background:#f7f8f5;color:#142f32;font-family:system-ui,sans-serif;line-height:1.75}header,main,footer{max-width:56rem;margin:auto;padding:1.5rem}header{border-bottom:1px solid #b4c3be}nav{display:flex;gap:1.5rem;flex-wrap:wrap}a{color:#08694d;text-underline-offset:3px}a:focus-visible{outline:3px solid #08694d;outline-offset:4px}h1,h2,h3{line-height:1.3;scroll-margin-top:1rem}h1{font-size:2rem}h2{margin-top:2.5rem}li{margin:.55rem 0}code{font-size:.9em;overflow-wrap:anywhere;background:#e6eee8;padding:.1rem .3rem}table{width:100%;border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #aebdb6;padding:.6rem;text-align:left;min-width:9rem}th{background:#e5ede6}pre{overflow:auto;padding:1rem;background:#e5ede6}.skip{position:absolute;top:-10rem}.skip:focus{top:0;background:white;padding:.5rem}footer{border-top:1px solid #b4c3be;font-size:.9rem}@media(max-width:600px){html{font-size:16px}header,main,footer{padding:1rem}h1{font-size:1.7rem}}@media print{nav,.skip{display:none}body{background:white;color:black}a{color:black}header,main,footer{max-width:none}}</style></head><body><a class="skip" href="#content">Skip to content</a><header><strong>openfatture / Guide</strong><nav aria-label="Guide navigation"><a href="/">Back to app</a><a href="/guida.html" lang="it">Guida in italiano</a><a href="/self-hosting-and-sdi.html" lang="en">Complete guide in English</a></nav></header><main id="content"><h1>Self-hosting and your own SdI recipient code</h1>
+<p>This guide is for the person responsible for an Italian company's invoicing. It separates the work you do in OpenFatture from the work you do on the Agenzia delle Entrate websites. Technical steps are marked <strong>IT administrator</strong>.</p>
+<p>Reviewed against the official public pages on <strong>12 November 2026</strong>. The private portal screens were not accessed. Screen labels can change; use the official links below and the current instructions shown after login.</p>
+<h2>Start here: choose your route</h2>
+<table>
+<thead>
+<tr>
+<th>What your company wants</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Host its own invoicing workspace, while using an existing accredited provider</td>
+<td>Deploy OpenFatture for one company. Obtain the provider's recipient code and register it in Fatture e Corrispettivi. Your company does not need its own accredited channel.</td>
+</tr>
+<tr>
+<td>Operate its own direct SdI channel and receive invoices on its own code</td>
+<td>Complete channel development, accreditation, interoperability tests and production activation. Then request the recipient code.</td>
+</tr>
+<tr>
+<td>Offer a shared application to several companies</td>
+<td>Enable multi-tenant mode. Each company needs its own membership, invoice data and provider authorization. The operator can use an accredited provider or complete its own accreditation.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Current release:</strong> OpenFatture runs the workspace, drafts and payment records. Its direct SdI transport, qualified signing and compliant conservation are not implemented. Deploying the app or entering a code does not activate invoice transmission or reception. See the <a href="https://github.com/mlenarciak/openfatture/blob/main/docs/product-research.md">implementation scope</a>.</p>
+<h2>Understand the three different identifiers</h2>
+<ul>
+<li><strong>Partita IVA:</strong> identifies the business for VAT purposes.</li>
+<li><strong>Codice destinatario B2B:</strong> seven letters/numbers identifying an SdI receiving channel. Businesses often call this a “codice univoco.” A provider's code can be shared by many customers; the receiving system must route each invoice to the correct company.</li>
+<li><strong>Codice univoco ufficio:</strong> the six-character code used for an office of a public administration, recorded in IndicePA. It is a different code.</li>
+</ul>
+<p>A code is assigned by SdI. OpenFatture cannot generate one. A channel enabled only for sending cannot obtain a receiving code until receiving is accredited. The official <a href="https://www.fatturapa.gov.it/it/SistemaAccreditamento/processo-per-nuovo-accreditamento/">new accreditation process</a> explains these distinctions.</p>
+<h2>Route A: self-host with an existing provider</h2>
+<ol>
+<li>Ask your chosen accredited provider for its seven-character recipient code and its connection requirements. Confirm that it supports your intended API workflow. The included Fatture in Cloud adapter currently only reads the company list.</li>
+<li>Ask the person authorized for your company to sign in to <a href="https://ivaservizi.agenziaentrate.gov.it/">Fatture e Corrispettivi</a>. Use the company's authorized access role and select the correct company or represented taxpayer.</li>
+<li>Open the service named <strong>Registrazione dell'indirizzo telematico dove ricevere tutte le fatture elettroniche</strong>. It is associated with the invoicing area; the location can change.</li>
+<li>Choose <strong>Codice destinatario</strong>, enter the code supplied by the provider, and confirm/save the registration. Check the success message and keep a record of the selection.</li>
+<li>Read back the registered code. Share it with suppliers and update the company's invoicing details/QR code where appropriate. The registration sets a preferred delivery address; simply telling a supplier is a separate action.</li>
+<li>Coordinate a real reception test with the provider after it is operational. Check both the received XML and its company/VAT details before considering the switch complete.</li>
+</ol>
+<p>Registering an address does not create a new recipient code. The Agenzia's <a href="https://www1.agenziaentrate.gov.it/web_app_entrate/fatturazione_elettronica.html/guide-gallery.html">invoicing guide</a> explains registration and the available delivery methods.</p>
+<p><strong>What you should have at the end:</strong> a recorded recipient address on the Agenzia portal, a provider agreement and a tested receiving service. OpenFatture must still have a completed provider connector before it can import or send live documents.</p>
+<h2>Route B: obtain your own direct receiving code</h2>
+<h3>1. Prepare the company and authorized operator</h3>
+<p><strong>Company administrator:</strong> confirm that the company is registered for the Agenzia's Entratel/Fisconline services and that the person handling accreditation is authorized to act for it. The current guide permits SPID, CIE, CNS or the applicable Entratel/Fisconline credentials.</p>
+<p>A <strong>Gestore Incaricato</strong> can authorize an additional operator through the Agenzia reserved area:</p>
+<ol>
+<li>Open <strong>Il tuo Profilo → Incarichi</strong>.</li>
+<li>Choose <strong>Gestisci incarichi come gestore</strong>.</li>
+<li>Select the operator and choose <strong>Gestisci Servizi</strong>.</li>
+<li>Enable <strong>Accreditamento e gestione dei canali trasmissivi</strong> and confirm.</li>
+</ol>
+<p>Use the official <a href="https://www.fatturapa.gov.it/export/documenti/guide/Guida-SA_v2.0.pdf">Sistema di Accreditamento guide, version 2.0</a>, especially its access and operator-authorization sections. It also explains the separate process for foreign operators.</p>
+<h3>2. Prepare the receiving service</h3>
+<p><strong>IT administrator:</strong> read the current <a href="https://www.fatturapa.gov.it/it/norme-e-regole/DocumentazioneSDI/">SdI technical documentation</a>. For the Web Service route, implement the current SdICoop reception interface, notification handling and certificate requirements. Arrange continuous monitoring, certificate renewal, backups and incident ownership.</p>
+<p>The chosen channel must support <strong>receiving</strong>. Web Service channels can be accredited for sending, receiving or both. SFTP accreditation covers both directions. Self-hosting this release's HTTP API is not sufficient: that API is a business application API, not the SdICoop SOAP receiving endpoint.</p>
+<h3>3. Open the current accreditation system</h3>
+<p><strong>Authorized operator:</strong> go to <a href="https://accreditamento.fatturapa.gov.it/">Sistema di Accreditamento</a>, also linked from the <a href="https://www.fatturapa.gov.it/it/SistemaAccreditamento/">official introduction</a>.</p>
+<p>Select the company for which you are acting. Start the new channel procedure and enter the company/subscriber details, the person responsible for the service agreement, technical contacts and channel details requested by the system.</p>
+<p>For Web Service channels, follow the portal's CSR and certificate-generation steps. Your IT administrator creates the certificate signing request and protects the corresponding private key. Keep test and production material separate. Do not put private keys or signatures in Git, browser configuration or support messages.</p>
+<h3>4. Complete the tests and activate production</h3>
+<p><strong>IT administrator and authorized operator:</strong> run the interoperability cases requested by the portal, resolve failures, then review and accept the generated <strong>Accordo di Servizio</strong>. Request <strong>Passaggio in produzione</strong> and confirm the channel's production state in the portal.</p>
+<p>The current procedure is documented under <a href="https://www.fatturapa.gov.it/it/SistemaAccreditamento/processo-per-nuovo-accreditamento/">Processo per nuovo accreditamento</a>. Older instructions about a signed ZIP sent by PEC describe a previous process and should not be used as the starting procedure.</p>
+<p>The interoperability phase may use six-character PA test codes even when your eventual business use is B2B. The official process explains this. Test invoices do not become real fiscal invoices.</p>
+<h3>5. Request and register the receiving code</h3>
+<p>After production activation of a receiving channel, use the accreditation system's <strong>Richiesta codici destinatario B2B</strong> function. Follow its current instructions and record the seven-character code assigned to your channel. If the function is unavailable, verify the selected company, your operator permission, the channel's receiving direction and its production status.</p>
+<p>Return to <a href="https://ivaservizi.agenziaentrate.gov.it/">Fatture e Corrispettivi</a> and register that code as the company's receiving address, following Route A steps 2–5. A recipient-code request and a taxpayer's address registration are two separate operations.</p>
+<p><strong>What you should have at the end:</strong> an active receiving channel, its assigned code, the accepted agreement, monitored endpoints, protected certificates and a registered company receiving address. Finish the OpenFatture transport implementation and verify reception before moving suppliers to the channel.</p>
+<h2>Enable mass-download services separately</h2>
+<p>SMTS provides historical/bulk data retrieval and stamp-duty workflows. It requires additional setup even if the normal channel already works:</p>
+<ol>
+<li>Confirm the provider has an accredited SdICoop channel.</li>
+<li>In <strong>Fatture e Corrispettivi → Consultazione</strong>, open <strong>Censimento canali per forniture massive</strong> and enable the intended provider for the taxpayer and services concerned.</li>
+<li>If acting for another taxpayer, obtain and verify the relevant delegation. A company membership in OpenFatture is not a delegation on the Agenzia portal.</li>
+<li>Arrange qualified signing of requests by the taxpayer or delegated intermediary. The transport certificate and the qualified request signature serve different purposes.</li>
+<li>Implement request submission, status checks, archive download, integrity checks and deadlines against the official SMTS v1.5 files.</li>
+</ol>
+<p>Downloading certain received invoices through this service constitutes <strong>presa visione</strong>. The future connector must explain that consequence before the user authorizes the download and record the action. The app currently saves only local request drafts. See the <a href="https://www.agenziaentrate.gov.it/portale/servizi-massivi-sdicoop">official SMTS page and technical files</a>.</p>
+<h2>Configure OpenFatture for one company or many</h2>
+<p>The <strong>server</strong> feature flag is authoritative. The browser flag only controls presentation.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Multiple companies</th>
+<th>One self-hosted company</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API <code>MULTI_TENANT</code></td>
+<td><code>true</code> (default)</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td>API <code>SELF_HOSTED_COMPANY_ID</code></td>
+<td>Not required</td>
+<td>Required, for example <code>company_acme</code></td>
+</tr>
+<tr>
+<td>Web <code>/config.json</code></td>
+<td><code>features.multiTenant: true</code></td>
+<td><code>features.multiTenant: false</code></td>
+</tr>
+<tr>
+<td>AWS CDK context</td>
+<td><code>-c multiTenant=true</code></td>
+<td><code>-c multiTenant=false -c selfHostedCompanyId=company_acme</code></td>
+</tr>
+</tbody>
+</table>
+<p>In both modes, production uses Cognito and stored company memberships. Single-company mode rejects access to every other company, even if the user has another membership. It does not bypass login. Multi-tenant mode lets a user select only companies to which the server has granted membership.</p>
+<p>For local single-company demonstration, start the API with <code>MULTI_TENANT=false SELF_HOSTED_COMPANY_ID=company_demo</code> and set <code>features.multiTenant</code> to <code>false</code> in <code>apps/web/public/config.json</code>. Production configuration is generated by CDK, keeping both flags aligned. See <a href="https://github.com/mlenarciak/openfatture/blob/main/infra/README.md">AWS deployment</a> and <a href="https://github.com/mlenarciak/openfatture#readme">local setup</a>.</p>
+<p>Changing the flag does not migrate, merge or delete company records. Restrict access and plan memberships before changing a running installation. It also does not grant provider accreditation or enable live fiscal submissions.</p>
+<h2>Common problems</h2>
+<table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>What to check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Company missing after accreditation login</td>
+<td>Company's telematic registration and the operator's incarico</td>
+</tr>
+<tr>
+<td>Cannot request a B2B code</td>
+<td>Receiving direction and production activation, then operator permissions</td>
+</tr>
+<tr>
+<td>Supplier invoice goes to the previous service</td>
+<td>Registered receiving address, provider cutover and invoice routing details</td>
+</tr>
+<tr>
+<td>OpenFatture says no company access</td>
+<td>Provision a company and Cognito-sub membership; check the single-company pin</td>
+</tr>
+<tr>
+<td>Bulk request remains waiting for configuration</td>
+<td>Expected in this release; qualified signing and a live SMTS adapter are still needed</td>
+</tr>
+<tr>
+<td>Files are backed up but not conserved</td>
+<td>Arrange a compliant conservation service separately</td>
+</tr>
+</tbody>
+</table>
+<p>Keep credentials with the people authorized to use them. The company administrator handles portal authorizations; the IT administrator handles service operations; the accounting contact confirms the fiscal workflow and preservation arrangements.</p></main><footer>OpenFatture · Official sources reviewed 12 November 2026. Portal actions require the company’s authorized operator.</footer></body></html>

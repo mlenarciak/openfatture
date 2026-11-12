@@ -1,0 +1,9 @@
+{
+  "app": "npx tsx src/app.ts",
+  "context": {
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/aws-lambda:useCdkManagedLogGroup": false,
+    "@aws-cdk/aws-lambda-nodejs:useLatestRuntimeVersion": true,
+    "@aws-cdk/core:defaultCrossStackReferences": "strong"
+  }
+}

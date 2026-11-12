@@ -1,0 +1,3 @@
+# Keep the official protocol files byte-for-byte identical to sources.json checksums.
+docs/references/sdicoop/*.xsd -text whitespace=-trailing-space,-space-before-tab
+docs/references/sdicoop/*.wsdl -text whitespace=-trailing-space,-space-before-tab

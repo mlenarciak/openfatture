@@ -1,0 +1,62 @@
+{
+  "page": "https://www.agenziaentrate.gov.it/portale/servizi-massivi-sdicoop",
+  "reviewedAt": "2026-11-12",
+  "sources": [
+    {
+      "file": "InputMassivo_v1.5.xsd",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/5748669/InputMassivo_v1.5.xsd/8275e3f1-e60a-4136-2dad-ca17c0ee8441?t=1773644690741",
+      "sha256": "88b0776dc406a9237648a88df10283ad21a9a42d2404650a164fc84d8403bc7b",
+      "bytes": 18297,
+      "downloadedAt": "2026-11-12",
+      "vendored": true
+    },
+    {
+      "file": "RichiestaServiziMassivi_v1.0.xsd",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/4845817/RichiestaServiziMassivi_v1.0.xsd/9888c9ee-a8e3-529b-7254-61f3d4e6ad9b?t=1669378884663",
+      "sha256": "f10176df88d50f13046450e4d0f0e71ad8b68a2f76a4369eaf0184842d1a806b",
+      "bytes": 1543,
+      "downloadedAt": "2026-11-12",
+      "vendored": true
+    },
+    {
+      "file": "Servizi_Massivi_Specifiche_Tecniche_v1.5.pdf",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/5748669/Servizi_Massivi_Specifiche_Tecniche_v1.5.pdf/f1734d20-d179-eb0a-7a2d-2ea6a710f1f6?t=1773644778533",
+      "sha256": "4f2c69b7e3841c4f63392d2689ad78355f6c3eb6c002f7a35d8159189b3390ff",
+      "bytes": 458365,
+      "downloadedAt": "2026-11-12",
+      "vendored": false
+    },
+    {
+      "file": "ServiziMassiviTypes_v1.0.xsd",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/4845817/ServiziMassiviTypes_v1.0.xsd/49eb39e3-ff01-635b-5f3f-b6791e2ccf46?t=1669378899036",
+      "sha256": "ad79fa69670e92b7a38ad6e339679f30592ac42e06d5c1c634fe23671cd75259",
+      "bytes": 6844,
+      "downloadedAt": "2026-11-12",
+      "vendored": true
+    },
+    {
+      "file": "ServiziScaricoMassivo_v1.0.wsdl",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/4845817/ServiziScaricoMassivo_v1.0.wsdl/8fc8d58e-41b5-cda0-0bdb-82ec2fd42976?t=1669378902374",
+      "sha256": "19ef1b9d0f699a9ac56d2208048969a8e823053bb37d05d07a5cb028525e3d7f",
+      "bytes": 3623,
+      "downloadedAt": "2026-11-12",
+      "vendored": true
+    },
+    {
+      "file": "ServiziTrasmissioneMassiva_v1.0.wsdl",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/4845817/ServiziTrasmissioneMassiva_v1.0.wsdl/73f8b79a-f715-308f-05cf-0118c9fcd740?t=1669378905735",
+      "sha256": "e7f9bfad0cc2448296662905a4e273d1be9f7763fcd61d437e7cf626edc8c540",
+      "bytes": 3021,
+      "downloadedAt": "2026-11-12",
+      "vendored": true
+    },
+    {
+      "file": "Servizi_Massivi_Specifiche_Tecniche_di_formato_file_v1.5.pdf",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/5748669/Servizi_Massivi_Specifiche_Tecniche_di_formato_file_v1.5.pdf/63ad2b02-f009-9b20-5542-e31a45e8e9d5?t=1773644838525",
+      "sha256": "9a50c9bd00755c757b523291f61c4b913ce3cec39e21e5a3d3167378359763b0",
+      "bytes": 531403,
+      "downloadedAt": "2026-11-12",
+      "vendored": false
+    }
+  ]
+}
