@@ -2,6 +2,8 @@
 
 A TypeScript workspace for Italian invoicing: a TanStack React application, a Fastify API, shared validated contracts and AWS CDK infrastructure. Supports a shared multi-company deployment or one self-hosted company through a server-enforced feature flag.
 
+Production: **https://d2kr49d1pw02a7.cloudfront.net/** (invited Cognito users only). See the [deployment record](docs/deployment.md) for current status and domain setup.
+
 **Start with the [self-hosting and SdI guide](docs/self-hosting-and-sdi.md)** for plain-language instructions on the Agenzia portals, requesting your own recipient code, using an existing provider and enabling mass services.
 
 **In italiano:** [Guida rapida per le aziende](docs/guida-rapida-aziende.md).
@@ -54,7 +56,7 @@ flowchart LR
   Future -.-> Files["Private S3 artifacts"]
 ```
 
-Read the [AWS review](docs/aws-review.md) for inspected account configuration and the [deployment runbook](infra/README.md) for bootstrap, diff, deployment and operations. No AWS deployment was performed during generation. The repository's CI checks and synthesizes without deploying.
+Read the [AWS review](docs/aws-review.md) for the initial account inspection, the [deployment record](docs/deployment.md) for the live production service, and the [deployment runbook](infra/README.md) for deployment and operations. The repository's CI checks and synthesizes without deploying.
 
 ```sh
 npm run check

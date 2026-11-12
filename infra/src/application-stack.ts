@@ -1,9 +1,11 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CfnOutput, Duration, RemovalPolicy, Stack, type StackProps, aws_apigateway as restapigw, aws_apigatewayv2 as apigw, aws_apigatewayv2_authorizers as authorizers, aws_apigatewayv2_integrations as integrations, aws_cloudfront as cloudfront, aws_cloudfront_origins as origins, aws_cloudwatch as cloudwatch, aws_cognito as cognito, aws_iam as iam, aws_lambda as lambda, aws_lambda_nodejs as nodejs, aws_logs as logs, aws_s3 as s3, aws_s3_deployment as deployment } from 'aws-cdk-lib';
+import { CfnOutput, Duration, RemovalPolicy, Stack, type StackProps, aws_apigateway as restapigw, aws_apigatewayv2 as apigw, aws_apigatewayv2_authorizers as authorizers, aws_apigatewayv2_integrations as integrations, aws_certificatemanager as acm, aws_cloudfront as cloudfront, aws_cloudfront_origins as origins, aws_cloudwatch as cloudwatch, aws_cognito as cognito, aws_iam as iam, aws_lambda as lambda, aws_lambda_nodejs as nodejs, aws_logs as logs, aws_route53 as route53, aws_route53_targets as targets, aws_s3 as s3, aws_s3_deployment as deployment } from 'aws-cdk-lib';
 import type { Construct } from 'constructs';
 import type { DataStack } from './data-stack.js';
+import { deploymentCustomDomain, type CustomDomain } from './custom-domain.js';
+import { spaRouterCode } from './spa-router.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 interface ApplicationStackProps extends StackProps {
@@ -11,6 +13,7 @@ interface ApplicationStackProps extends StackProps {
   stage: 'dev' | 'prod';
   multiTenant?: boolean;
   selfHostedCompanyId?: string;
+  customDomain?: CustomDomain;
   /** Unit tests supply tiny local assets; production always bundles the real handler. */
   apiCode?: lambda.Code;
   webDirectory?: string;
@@ -20,6 +23,7 @@ export class ApplicationStack extends Stack {
   constructor(scope: Construct, id: string, props: ApplicationStackProps) {
     super(scope, id, props);
     const { data, stage } = props;
+    const customDomain = deploymentCustomDomain(props.customDomain?.domainName, props.customDomain?.hostedZoneId, props.customDomain?.certificateArn);
     const multiTenant = props.multiTenant ?? true;
     if (!multiTenant && (!props.selfHostedCompanyId || !/^[a-zA-Z0-9_-]{1,80}$/.test(props.selfHostedCompanyId))) throw new Error('selfHostedCompanyId is required in single-company mode');
     const webDirectory = props.webDirectory ?? path.join(root, 'apps/web/dist');
@@ -31,7 +35,7 @@ export class ApplicationStack extends Stack {
     });
     const routeRewrite = new cloudfront.Function(this, 'SpaRouter', {
       runtime: cloudfront.FunctionRuntime.JS_2_0,
-      code: cloudfront.FunctionCode.fromInline("function handler(event) { var request = event.request; if (!request.uri.split('/').pop().includes('.')) request.uri = '/index.html'; return request; }"),
+      code: cloudfront.FunctionCode.fromInline(spaRouterCode(customDomain?.domainName)),
     });
     const headers = new cloudfront.ResponseHeadersPolicy(this, 'WebHeaders', {
       securityHeadersBehavior: {
@@ -47,6 +51,7 @@ export class ApplicationStack extends Stack {
     });
     const distribution = new cloudfront.Distribution(this, 'WebDistribution', {
       defaultRootObject: 'index.html',
+      ...(customDomain ? { domainNames: [customDomain.domainName], certificate: acm.Certificate.fromCertificateArn(this, 'WebCertificate', customDomain.certificateArn) } : {}),
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(web),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -55,7 +60,15 @@ export class ApplicationStack extends Stack {
         functionAssociations: [{ eventType: cloudfront.FunctionEventType.VIEWER_REQUEST, function: routeRewrite }],
       },
     });
-    const webUrl = `https://${distribution.distributionDomainName}`;
+    const cloudFrontUrl = `https://${distribution.distributionDomainName}`;
+    const webUrl = customDomain ? `https://${customDomain.domainName}` : cloudFrontUrl;
+    const webOrigins = customDomain ? [webUrl, cloudFrontUrl] : [webUrl];
+    if (customDomain) {
+      const zone = route53.HostedZone.fromHostedZoneId(this, 'WebHostedZone', customDomain.hostedZoneId);
+      const recordProps = { zone, recordName: `${customDomain.domainName}.`, target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)) };
+      new route53.ARecord(this, 'WebIpv4Alias', recordProps);
+      new route53.AaaaRecord(this, 'WebIpv6Alias', recordProps);
+    }
     const domain = new cognito.UserPoolDomain(this, 'HostedLogin', {
       userPool: data.userPool,
       cognitoDomain: { domainPrefix: `openfatture-${stage}-${this.account}` },
@@ -67,7 +80,7 @@ export class ApplicationStack extends Stack {
       authFlows: { userSrp: true },
       accessTokenValidity: Duration.minutes(15), idTokenValidity: Duration.minutes(15), refreshTokenValidity: Duration.days(1),
       refreshTokenRotationGracePeriod: Duration.seconds(10),
-      oAuth: { flows: { authorizationCodeGrant: true }, scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE], callbackUrls: [`${webUrl}/auth/callback`], logoutUrls: [`${webUrl}/`] },
+      oAuth: { flows: { authorizationCodeGrant: true }, scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE], callbackUrls: webOrigins.map(origin => `${origin}/auth/callback`), logoutUrls: webOrigins.map(origin => `${origin}/`) },
     });
     const apiLogs = new logs.LogGroup(this, 'ApiLogs', { retention: logs.RetentionDays.ONE_MONTH, encryptionKey: data.encryptionKey, removalPolicy: RemovalPolicy.RETAIN });
     data.encryptionKey.addToResourcePolicy(new iam.PolicyStatement({
@@ -83,7 +96,7 @@ export class ApplicationStack extends Stack {
         NODE_ENV: 'production', AUTH_MODE: 'cognito', TABLE_NAME: data.table.tableName,
         COGNITO_USER_POOL_ID: data.userPool.userPoolId, COGNITO_CLIENT_ID: client.userPoolClientId,
         ARTIFACTS_BUCKET: data.artifacts.bucketName, OUTBOX_QUEUE_URL: data.outbox.queueUrl,
-        CORS_ORIGINS: webUrl, MULTI_TENANT: String(multiTenant),
+        CORS_ORIGINS: webOrigins.join(','), MULTI_TENANT: String(multiTenant),
         ...(!multiTenant ? { SELF_HOSTED_COMPANY_ID: props.selfHostedCompanyId! } : {}),
       },
     };
@@ -98,7 +111,7 @@ export class ApplicationStack extends Stack {
     // Artifacts and queue are reserved for the accredited transport adapter; no worker or unused grants are provisioned.
     const api = new apigw.HttpApi(this, 'HttpApi', {
       createDefaultStage: false,
-      corsPreflight: { allowOrigins: [webUrl], allowHeaders: ['Authorization', 'Content-Type', 'X-Company-Id', 'Idempotency-Key'], exposeHeaders: ['X-Request-Id', 'Content-Disposition', 'X-OpenFatture-Draft'], allowMethods: [apigw.CorsHttpMethod.ANY], maxAge: Duration.hours(1) },
+      corsPreflight: { allowOrigins: webOrigins, allowHeaders: ['Authorization', 'Content-Type', 'X-Company-Id', 'Idempotency-Key'], exposeHeaders: ['X-Request-Id', 'Content-Disposition', 'X-OpenFatture-Draft'], allowMethods: [apigw.CorsHttpMethod.ANY], maxAge: Duration.hours(1) },
     });
     const jwt = new authorizers.HttpUserPoolAuthorizer('CognitoJwt', data.userPool, { userPoolClients: [client] });
     const integration = new integrations.HttpLambdaIntegration('ApiIntegration', apiFunction);
@@ -120,6 +133,7 @@ export class ApplicationStack extends Stack {
       cacheControl: [deployment.CacheControl.noCache()],
     });
     new CfnOutput(this, 'WebUrl', { value: webUrl });
+    if (customDomain) new CfnOutput(this, 'CloudFrontUrl', { value: cloudFrontUrl });
     new CfnOutput(this, 'ApiUrl', { value: api.apiEndpoint });
     new CfnOutput(this, 'UserPoolId', { value: data.userPool.userPoolId });
     new CfnOutput(this, 'UserPoolClientId', { value: client.userPoolClientId });

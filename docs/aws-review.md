@@ -2,6 +2,8 @@
 
 Reviewed 12 November 2026 using local Hermes configuration, existing DLT infrastructure handoff documents, and bounded read-only AWS CLI queries. No resource, credential, DNS, existing application or account setting was changed. Secret values and private keys were not read or copied into this repository.
 
+This is the pre-deployment inventory snapshot. The later authorized production deployment is recorded in [deployment.md](deployment.md).
+
 ## Context actually inspected
 
 - `/root/.hermes/profiles/dlt/config.yaml` and `profile.yaml`: DLT profile; workspace is empty and supplies no infrastructure project.

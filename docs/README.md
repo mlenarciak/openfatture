@@ -6,6 +6,7 @@ Choose the guide for the work you need to do:
 - **Company administrator:** [Self-hosting and your own SdI code](self-hosting-and-sdi.md). Explains the current Agenzia portal steps, what your company must prepare, and the difference between your own channel and a provider's code.
 - **Developer running the application:** [Local setup and commands](../README.md).
 - **Cloud administrator:** [AWS deployment runbook](../infra/README.md) and [review of the DLT configuration](aws-review.md).
+- **Current service:** [Live deployment and domain status](deployment.md).
 - **Administrator granting application access:** [API and company provisioning](../apps/api/README.md).
 - **Integration developer:** [Product and protocol research](product-research.md) and [official SMTS source manifest](references/sdicoop/sources.json).
 - **Reviewer:** [Validation results and remaining limits](validation.md).

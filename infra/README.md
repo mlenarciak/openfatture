@@ -19,11 +19,11 @@ AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:synth -- -c stage=dev
 AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:diff -- -c stage=dev
 ```
 
-No AWS deployment was performed while generating this repository. The inspected account did not have a `CDKToolkit` stack in Milan. A deployment operator must first review bootstrap permissions and the diff. Bootstrapping and deploying create billable resources:
+The initial review found no `CDKToolkit` stack in Milan. The account was subsequently bootstrapped and the production application deployed on 12 November 2026; see the [deployment record](../docs/deployment.md). For a new account/Region, review bootstrap permissions and the diff first. Bootstrapping and deploying create billable resources:
 
 ```sh
 cd infra
-AWS_PROFILE=dlt npx cdk bootstrap aws://509581811464/eu-south-1
+AWS_PROFILE=dlt npx cdk bootstrap aws://509581811464/eu-south-1 --termination-protection
 AWS_PROFILE=dlt npm run diff -- -c stage=dev
 AWS_PROFILE=dlt npm run deploy -- -c stage=dev
 ```
@@ -52,7 +52,7 @@ The inspected Roles Anywhere identity is constrained by source IP. Run deploymen
 
 API Lambda and HTTP API access logs retain one month, encrypted with the data KMS key. Logs omit request bodies and bearer tokens. CloudWatch alarms cover API errors and dead-letter backlog; wire their alarm actions to your incident channel before production. Existing account-level CloudTrail and security controls were not audited by this bounded review.
 
-All dynamic web responses use no-cache for predictable config and auth transitions. CSP restricts scripts to self; `connect-src` currently allows HTTPS endpoints because API and Cognito endpoints are generated during deployment. Tighten it to exact deployed origins when introducing a custom domain. There is no custom DNS, paid NAT gateway, always-on server, external provider secret, or live SdICoop channel in this deployment.
+All dynamic web responses use no-cache for predictable config and auth transitions. CSP restricts scripts to self; `connect-src` currently allows HTTPS endpoints because API and Cognito endpoints are generated during deployment. Tighten it to exact deployed origins when introducing a custom domain. Custom DNS is optional as described below. The stacks do not add a paid NAT gateway, always-on server, external provider secret, or live SdICoop channel.
 
 Before processing live invoices: replace the bounded company-state document with per-entity storage for anticipated volume, configure backup restore drills and alert actions, establish tenant onboarding/roles, and complete the documented SdI/provider accreditation and fiscal validation work. S3 versioning is operational storage; it does not implement compliant digital preservation.
 
@@ -70,3 +70,40 @@ AWS_PROFILE=dlt npm run deploy -- -c stage=dev -c multiTenant=false -c selfHoste
 ```
 
 `multiTenant` accepts only `true` or `false`; disabling it without a valid `selfHostedCompanyId` fails synthesis. Both the API environment (`MULTI_TENANT`, `SELF_HOSTED_COMPANY_ID`) and `/config.json` (`features.multiTenant`) are configured by this flag. The UI hides company switching, and the API limits visible companies and rejects selection of another company. Token verification, stored company membership and role checks still apply. Provisioning and sign-in are required in either mode. To deploy the default multi-company mode, omit these context values or explicitly pass `-c multiTenant=true`.
+
+## Optional custom domain
+
+Without domain context, the application continues to use its generated CloudFront hostname and creates no DNS records. To use a domain you control, provide all three context values together:
+
+| Context | Existing resource required |
+| --- | --- |
+| `domainName` | A fully qualified hostname such as `openfatture.it` or `app.example.it`, without a scheme or trailing dot. |
+| `hostedZoneId` | The Route 53 public hosted zone that contains this hostname, delegated to Route 53 in the domain's authoritative DNS. |
+| `certificateArn` | An issued ACM certificate in **us-east-1**, in the deployment account, covering the exact hostname. A wildcard certificate covers only the matching subdomain level, not the zone apex. |
+
+Domain registration, public hosted zone creation/delegation, certificate issuance, and DNS validation are separate operator actions. Supplying these context values imports the existing zone and certificate; the stack does not purchase a domain or create another zone or certificate. Review existing A/AAAA records for the chosen hostname before deployment: the stack creates its own aliases and does not overwrite records it does not own.
+
+After the existing resources are ready, set their identifiers in task-specific shell variables and pass the same values to review and deployment:
+
+```sh
+cd infra
+OPENFATTURE_DOMAIN=openfatture.it
+OPENFATTURE_ZONE_ID=Z_REPLACE_WITH_EXISTING_ZONE_ID
+OPENFATTURE_CERTIFICATE_ARN=arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERTIFICATE_ID
+
+AWS_PROFILE=dlt npm run synth -- -c stage=prod \
+  -c domainName="$OPENFATTURE_DOMAIN" -c hostedZoneId="$OPENFATTURE_ZONE_ID" \
+  -c certificateArn="$OPENFATTURE_CERTIFICATE_ARN"
+AWS_PROFILE=dlt npm run diff -- -c stage=prod \
+  -c domainName="$OPENFATTURE_DOMAIN" -c hostedZoneId="$OPENFATTURE_ZONE_ID" \
+  -c certificateArn="$OPENFATTURE_CERTIFICATE_ARN"
+AWS_PROFILE=dlt npm run deploy -- -c stage=prod \
+  -c domainName="$OPENFATTURE_DOMAIN" -c hostedZoneId="$OPENFATTURE_ZONE_ID" \
+  -c certificateArn="$OPENFATTURE_CERTIFICATE_ARN"
+```
+
+The distribution adds the hostname and its ACM certificate, then creates Route 53 A and AAAA alias records pointing to the distribution. `WebUrl` and the generated frontend configuration use the custom HTTPS origin. API CORS and Cognito callback/logout allowlists include both that origin and the distribution hostname. `CloudFrontUrl` additionally exposes the generated distribution URL when custom DNS is enabled.
+
+A viewer-request CloudFront Function redirects requests arriving on the distribution hostname to the custom HTTPS origin before the SPA loads, preserving the path and query parameters. This ensures sign-in begins and ends on the same origin, where the browser stores its PKCE state. Canonical extensionless routes then receive the normal SPA rewrite. Use the custom URL after deployment and allow time for DNS and CloudFront propagation. Removing all three context values together restores the distribution URL and removes the stack-owned aliases; retaining imported domain registration, hosted zone, and certificate remains the operator's responsibility.
+
+References: [CloudFront certificate region requirements](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html), [Route 53 aliases to CloudFront](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-cloudfront-distribution.html), [CloudFront query string event format](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/functions-event-structure.html).
