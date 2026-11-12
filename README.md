@@ -2,13 +2,13 @@
 
 A TypeScript workspace for Italian invoicing: a TanStack React application, a Fastify API, shared validated contracts and AWS CDK infrastructure. Supports a shared multi-company deployment or one self-hosted company through a server-enforced feature flag.
 
-Application: **https://d2kr49d1pw02a7.cloudfront.net/**. The public demo needs no account; company workspaces use invited Cognito users. See the [deployment record](docs/deployment.md) for deployment status and domain setup.
+Application: **https://openfatture.com/**. The public demo needs no account; company workspaces use invited Cognito users. See the [deployment record](docs/deployment.md) for deployment status and domain setup.
 
 ## Try the product
 
-Choose **Prova la demo** on the home page, or open **[/demo](https://d2kr49d1pw02a7.cloudfront.net/demo)**. Create a sample client, prepare a document, download draft XML and record an incasso. Each browser tab has its own synthetic workspace, stored in `sessionStorage`; it survives reloads until the browser clears that session. **Ripristina demo** restores the examples and **Esci dalla demo** returns to the public page. Browser tabs duplicated by the browser can initially copy session storage, then evolve separately. Use fictional data only.
+Choose **Prova la demo** on the home page, or open **[/demo](https://openfatture.com/demo)**. Create a sample client, prepare a document, download draft XML and record an incasso. Each browser tab has its own synthetic workspace, stored in `sessionStorage`; it survives reloads until the browser clears that session. **Ripristina demo** restores the examples and **Esci dalla demo** returns to the public page. Browser tabs duplicated by the browser can initially copy session storage, then evolve separately. Use fictional data only.
 
-The public demo runs entirely in the browser. Its data operations never call the production API or fiscal providers. It is separate from both a real company account and an SdI test environment. Open **[/login](https://d2kr49d1pw02a7.cloudfront.net/login)** for company access, first-login instructions and password recovery guidance. A successful login without assigned company membership shows onboarding instructions.
+The public demo runs entirely in the browser. Its data operations never call the production API or fiscal providers. It is separate from both a real company account and an SdI test environment. Open **[/login](https://openfatture.com/login)** for company access, first-login instructions and password recovery guidance. A successful login without assigned company membership shows onboarding instructions.
 
 The interface uses shadcn/ui, the supplied neutral/purple theme, square corners and a persistent light/dark preference. Documents and tables retain keyboard navigation and forms use accessible labels and modal focus management.
 

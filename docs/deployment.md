@@ -4,11 +4,11 @@ Deployed on **12 November 2026**, in the DLT AWS account through profile `dlt`, 
 
 | Component | Current value |
 | --- | --- |
-| Application | https://d2kr49d1pw02a7.cloudfront.net/ |
-| Public demo | https://d2kr49d1pw02a7.cloudfront.net/demo — no account required |
-| Company sign-in | https://d2kr49d1pw02a7.cloudfront.net/login |
-| Company guide | https://d2kr49d1pw02a7.cloudfront.net/guida.html |
-| SdI testing checklist | https://d2kr49d1pw02a7.cloudfront.net/sdi-integration-testing.html |
+| Application | https://openfatture.com/ |
+| Public demo | https://openfatture.com/demo — no account required |
+| Company sign-in | https://openfatture.com/login |
+| Company guide | https://openfatture.com/guida.html |
+| SdI testing checklist | https://openfatture.com/sdi-integration-testing.html |
 | API | https://0yody6y044.execute-api.eu-south-1.amazonaws.com |
 | Health | https://0yody6y044.execute-api.eu-south-1.amazonaws.com/health |
 | Cognito pool | `eu-south-1_7hc8dlCAU` |
@@ -35,16 +35,28 @@ Local validation passed 50 unit/API/domain/infrastructure tests, eight Chromium 
 
 Public self-registration is disabled. An administrator email and verified company details are still required for the first invitation and tenant provisioning. Use the [access runbook](../infra/README.md#provision-access) and [API provisioning instructions](../apps/api/README.md). Do not invent fiscal company information or treat a Cognito account alone as company membership.
 
-## Chosen domain: openfatture.com
+## Registered domain: openfatture.com
 
-The requested `openfatture.it` is registered. The operator selected **openfatture.com**, which AWS reported `AVAILABLE` with standard registration and annual renewal prices of **USD 16 each**, before taxes. Route 53 DNS normally adds USD 0.50/month. Availability and quotes must be rechecked immediately before purchase.
+**openfatture.com is registered in the DLT AWS account.** Route 53 Domains completed registration operation `9a4769e4-32d2-4de4-b73f-eed9de188c62` on 12 November 2026 for one year at **USD 16**. The domain expires on **12 November 2027**; automatic renewal and registrar contact privacy are enabled. The legal registrant is DLT Viaggi S.r.l. No private address, phone number or registrar contact details are stored in this repository.
 
-Registration has **not** been submitted. The legal registrant choice and a contact email are pending. No registrar contact details are stored in this repository. AWS registration creates a public hosted zone automatically; reuse that zone rather than creating a duplicate.
+**Registrant email reachability verification remains pending:** the authorized contact must follow the verification link in the registrar's email. Successful registration does not replace that separate confirmation.
 
-An ACM certificate has been requested for `openfatture.com` in `us-east-1` and is `PENDING_VALIDATION`:
+The automatically created public hosted zone is `Z0205029353SA9C8BO1GN`. Its ACM DNS-validation CNAME is published; retain it for certificate validation and renewal. Do not create a duplicate hosted zone.
+
+ACM issued the `openfatture.com` certificate in **us-east-1**, valid through **29 May 2027**:
 
 `arn:aws:acm:us-east-1:509581811464:certificate/1cd10045-fa13-4a9e-8cc9-18e8b0db43c4`
 
-After registration, use the automatically created hosted zone to publish ACM's returned DNS validation CNAME. Wait for certificate issuance, then deploy the optional custom-domain context described in the [runbook](../infra/README.md#optional-custom-domain). It configures CloudFront HTTPS, Route 53 A/AAAA aliases, matching Cognito callbacks/CORS and a redirect from the CloudFront hostname to the canonical domain. Domain registration and certificate issuance are independent of the working CloudFront URL.
+The reviewed custom-domain CloudFormation update completed at **15:41:45 UTC on 12 November 2026**. CloudFront reports `Deployed`, uses the issued certificate and `TLSv1.2_2021` minimum policy, and serves the apex through Route 53 A/AAAA aliases. The generated web configuration, Cognito callback/logout origins and API CORS use the canonical domain. The retained data stack had no changes.
 
-Sources: [AWS registration behavior and price consent](https://docs.aws.amazon.com/Route53/latest/APIReference/API_domains_RegisterDomain.html), [Route 53 pricing](https://aws.amazon.com/route53/pricing/), and the live Route 53 Domains API quote retrieved on 12 November 2026.
+The previous hostname, `https://d2kr49d1pw02a7.cloudfront.net`, now redirects to `https://openfatture.com` before the app loads. Live checks verified preservation of the callback path and encoded/repeated query parameters, so PKCE sign-in starts and returns on the same canonical origin.
+
+A subsequent focused update completed at **15:46:03 UTC** to allow unauthenticated browser preflight on `OPTIONS /api/{proxy+}`. The existing `ANY /api/{proxy+}` business route retains JWT authentication and the `openid` access-token scope. The reviewed diff added only the OPTIONS route and its API Gateway-to-Lambda invocation permission; it changed no existing resource, data, role, Cognito setting, DNS record, frontend asset or certificate.
+
+Live Chromium checks on the canonical domain passed: home, `/demo`, `/login`, both company guides, the SdI checklist, synthetic draft XML download, reset/exit and mobile sign-in. The browser demo made **zero production API calls** and reported no JavaScript errors. Cognito's login request uses `https://openfatture.com/auth/callback`. Allowed-origin preflight returns **204** with authorization, company and idempotency headers allowed; an untrusted origin receives no permissive allow-origin response. Anonymous GET and POST business requests still return **401**, and API health returns **200**. No production user login, tenant mutation or fiscal transmission was performed.
+
+Keep `stage=prod`, `publicDemo=true`, and all three domain context values on subsequent deployments, as described in the [custom-domain runbook](../infra/README.md#optional-custom-domain). Domain registration, its contact verification and the application deployment are separate operations.
+
+The requested `openfatture.it` is already registered. The operator selected `openfatture.com` after AWS quoted standard registration and annual renewal prices of USD 16 each. Route 53 DNS normally adds USD 0.50/month for a public hosted zone; other service usage and applicable taxes are separate.
+
+Sources: [AWS registration behavior](https://docs.aws.amazon.com/Route53/latest/APIReference/API_domains_RegisterDomain.html), [Route 53 pricing](https://aws.amazon.com/route53/pricing/), and the live Route 53 Domains registration/price results retrieved on 12 November 2026.

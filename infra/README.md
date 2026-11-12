@@ -34,12 +34,18 @@ Use `-c stage=prod` for separate production stacks; the production data stack en
 
 The public product entry is `/`, the invited company sign-in entry is `/login`, and the optional anonymous browser demo is `/demo`. Set `-c publicDemo=true` consistently for synthesis, diff and deployment to expose **Prova la demo**. This flag defaults to `false`, accepts only strict booleans, and is independent of `multiTenant`. It configures only browser behavior: generated runtime authentication remains `cognito`, API routes still require JWTs, and no demonstration data is inserted in DynamoDB. Demo documents, payments and clients live in tab-local `sessionStorage`; reset/exit controls are available throughout the demo. The local development API's `AUTH_MODE=demo` remains prohibited in Lambda/production.
 
-For the public OpenFatture deployment, run from the repository root:
+For the public OpenFatture deployment at `openfatture.com`, run from the repository root with the complete context below. Keep the domain context on subsequent deployments so the aliases, certificate and Cognito callbacks remain configured. The certificate must be issued before the first custom-domain deployment:
 
-```sh
-AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:synth -- -c stage=prod -c publicDemo=true
-AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:diff -- -c stage=prod -c publicDemo=true
-AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:deploy -- -c stage=prod -c publicDemo=true
+```bash
+OPENFATTURE_PROD_CONTEXT=(
+  -c stage=prod -c publicDemo=true
+  -c domainName=openfatture.com
+  -c hostedZoneId=Z0205029353SA9C8BO1GN
+  -c certificateArn=arn:aws:acm:us-east-1:509581811464:certificate/1cd10045-fa13-4a9e-8cc9-18e8b0db43c4
+)
+AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:synth -- "${OPENFATTURE_PROD_CONTEXT[@]}"
+AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:diff -- "${OPENFATTURE_PROD_CONTEXT[@]}"
+AWS_PROFILE=dlt AWS_REGION=eu-south-1 npm run infra:deploy -- "${OPENFATTURE_PROD_CONTEXT[@]}"
 ```
 
 The pool disables public self-registration. Replace `USER_POOL_ID` with the deployment output and the example address with an independently verified operator address. Explicitly select email delivery because the [CLI defaults to SMS](https://docs.aws.amazon.com/cli/latest/reference/cognito-idp/admin-create-user.html). Set `email_verified=true` only after verifying ownership of that address:
@@ -87,7 +93,7 @@ Without domain context, the application continues to use its generated CloudFron
 
 | Context | Existing resource required |
 | --- | --- |
-| `domainName` | A fully qualified hostname such as `openfatture.it` or `app.example.it`, without a scheme or trailing dot. |
+| `domainName` | A fully qualified hostname such as `openfatture.com` or `app.example.it`, without a scheme or trailing dot. |
 | `hostedZoneId` | The Route 53 public hosted zone that contains this hostname, delegated to Route 53 in the domain's authoritative DNS. |
 | `certificateArn` | An issued ACM certificate in **us-east-1**, in the deployment account, covering the exact hostname. A wildcard certificate covers only the matching subdomain level, not the zone apex. |
 
@@ -97,7 +103,7 @@ After the existing resources are ready, set their identifiers in task-specific s
 
 ```sh
 cd infra
-OPENFATTURE_DOMAIN=openfatture.it
+OPENFATTURE_DOMAIN=openfatture.com
 OPENFATTURE_ZONE_ID=Z_REPLACE_WITH_EXISTING_ZONE_ID
 OPENFATTURE_CERTIFICATE_ARN=arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERTIFICATE_ID
 

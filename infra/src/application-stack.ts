@@ -118,6 +118,8 @@ export class ApplicationStack extends Stack {
     const jwt = new authorizers.HttpUserPoolAuthorizer('CognitoJwt', data.userPool, { userPoolClients: [client] });
     const integration = new integrations.HttpLambdaIntegration('ApiIntegration', apiFunction);
     api.addRoutes({ path: '/health', methods: [apigw.HttpMethod.GET], integration });
+    // An authorized ANY route also captures OPTIONS. Preflight must succeed before the browser can send its access token.
+    api.addRoutes({ path: '/api/{proxy+}', methods: [apigw.HttpMethod.OPTIONS], integration, authorizer: new apigw.HttpNoneAuthorizer() });
     api.addRoutes({ path: '/api/{proxy+}', methods: [apigw.HttpMethod.ANY], integration, authorizer: jwt, authorizationScopes: ['openid'] });
     const accessLogs = new logs.LogGroup(this, 'AccessLogs', { retention: logs.RetentionDays.ONE_MONTH, encryptionKey: data.encryptionKey, removalPolicy: RemovalPolicy.RETAIN });
     new apigw.HttpStage(this, 'ApiStage', {

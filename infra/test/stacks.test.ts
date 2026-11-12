@@ -12,6 +12,20 @@ import { deploymentCustomDomain } from '../src/custom-domain.js';
 import { spaRouterCode } from '../src/spa-router.js';
 import { runInNewContext } from 'node:vm';
 
+function assertApiPreflightBoundary(template: Template) {
+  template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+    RouteKey: 'OPTIONS /api/{proxy+}', AuthorizationType: 'NONE',
+    AuthorizerId: Match.absent(), AuthorizationScopes: Match.absent(),
+  });
+  const routes = Object.values(template.findResources('AWS::ApiGatewayV2::Route'))
+    .map(resource => resource.Properties).filter(route => route.RouteKey.includes('/api/'));
+  assert.equal(routes.filter(route => route.AuthorizationType === 'NONE').length, 1, 'only API preflight can bypass authorization');
+  for (const route of routes.filter(route => route.RouteKey !== 'OPTIONS /api/{proxy+}')) {
+    assert.equal(route.AuthorizationType, 'JWT', `${route.RouteKey} must retain JWT`);
+    assert.deepEqual(route.AuthorizationScopes, ['openid'], `${route.RouteKey} must require an access-token scope`);
+  }
+}
+
 test('cloud deployment retains company data, restricts API access and serves only private S3 origins', () => {
   const app = new App({ outdir: mkdtempSync(path.join(os.tmpdir(), 'openfatture-synth-test-')) });
   const env = { account: '111111111111', region: 'eu-south-1' };
@@ -24,6 +38,7 @@ test('cloud deployment retains company data, restricts API access and serves onl
   d.hasResourceProperties('AWS::Cognito::UserPool', { AdminCreateUserConfig: { AllowAdminCreateUserOnly: true } });
   d.hasResourceProperties('AWS::S3::Bucket', { PublicAccessBlockConfiguration: { BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true }, VersioningConfiguration: { Status: 'Enabled' } });
   const a = Template.fromStack(application);
+  assertApiPreflightBoundary(a);
   a.resourceCountIs('AWS::Route53::RecordSet', 0);
   a.hasResourceProperties('AWS::CloudFront::Distribution', { DistributionConfig: { Aliases: Match.absent() } });
   a.hasResourceProperties('AWS::ApiGatewayV2::Route', { RouteKey: 'ANY /api/{proxy+}', AuthorizationType: 'JWT', AuthorizationScopes: ['openid'] });
@@ -75,6 +90,7 @@ test('custom domain attaches TLS and A plus AAAA aliases and keeps auth and API 
   const customDomain = deploymentCustomDomain('openfatture.it', 'Z1234567890', certificateArn)!;
   const application = new ApplicationStack(app, 'DomainApp', { env, data, stage: 'prod', customDomain, webDirectory, apiCode: lambda.Code.fromInline('exports.handler=async()=>({statusCode:200,body:"ok"})') });
   const template = Template.fromStack(application);
+  assertApiPreflightBoundary(template);
   template.hasResourceProperties('AWS::CloudFront::Distribution', { DistributionConfig: Match.objectLike({ Aliases: ['openfatture.it'], IPV6Enabled: true, ViewerCertificate: Match.objectLike({ AcmCertificateArn: certificateArn, SslSupportMethod: 'sni-only' }) }) });
   for (const type of ['A', 'AAAA']) template.hasResourceProperties('AWS::Route53::RecordSet', { HostedZoneId: 'Z1234567890', Name: 'openfatture.it.', Type: type, AliasTarget: Match.objectLike({ HostedZoneId: Match.anyValue(), DNSName: { 'Fn::GetAtt': [Match.stringLikeRegexp('^WebDistribution'), 'DomainName'] } }) });
   template.resourceCountIs('AWS::Route53::HostedZone', 0);
